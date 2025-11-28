@@ -1,0 +1,299 @@
+# =============================================================================
+# .gitignore for TSP Optimization Project (Python 3.11.9 + DEAP + Streamlit)
+# =============================================================================
+
+# ===============================
+# Python Core
+# ===============================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===============================
+# Virtual Environments - CRITICAL!
+# ===============================
+venv/
+venv_*/
+venv_python311/
+venv_tsp/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.env/
+pyvenv.cfg
+
+# ===============================
+# Environment Variables & Secrets
+# ===============================
+.env
+.env.local
+.env.production
+.env.staging
+google_maps_api_key.txt
+api_keys.txt
+secrets.json
+
+# ===============================
+# IDE & Editor Files
+# ===============================
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+
+# ===============================
+# Operating System Files
+# ===============================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ===============================
+# Project-Specific Data Files
+# ===============================
+# Cache directories (Google Maps API results)
+data/cache/
+cache/
+google_maps_cache/
+distance_matrices_cache/
+
+# Results và output files
+data/results/
+results/
+output/
+*.csv
+!data/test_cases/*.csv  # Keep test data
+*.json
+!data/test_cases/*.json  # Keep test data
+!config.json            # Keep config template
+
+# Large data files
+data/large_datasets/
+data/real_world_data/
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ===============================
+# Streamlit Specific
+# ===============================
+.streamlit/cache/
+streamlit_cache/
+# ===============================
+# Jupyter Notebooks
+# ===============================
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Jupyter output
+notebooks/output/
+notebooks/results/
+
+# ===============================
+# Testing & Coverage
+# ===============================
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ===============================
+# Documentation Generated Files
+# ===============================
+docs/_build/
+docs/build/
+site/
+.mkdocs.yml.bak
+
+# Keep original docs
+!docs/report.pdf
+!docs/presentation.pptx
+!docs/images/
+
+# ===============================
+# Logs & Monitoring
+# ===============================
+*.log
+logs/
+log/
+*.out
+*.err
+
+# ===============================
+# Temporary Files
+# ===============================
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.orig
+*.save
+
+# ===============================
+# Algorithm-Specific Outputs
+# ===============================
+# GA/PSO algorithm outputs
+algorithm_results/
+convergence_data/
+population_history/
+fitness_logs/
+
+# Performance benchmarks
+benchmarks/
+performance_data/
+
+# ===============================
+# Google Maps & API Related
+# ===============================
+# API response cache
+maps_cache/
+geocoding_cache/
+directions_cache/
+
+# Large map tiles or images
+*.png
+*.jpg
+*.jpeg
+!docs/images/*.png  # Keep documentation images
+!docs/images/*.jpg
+!assets/icons/*.png  # Keep UI icons
+
+# ===============================
+# Dependencies & Package Management
+# ===============================
+# Don't ignore requirements.txt - this is needed!
+# requirements.txt should be tracked
+
+# But ignore lock files from other package managers
+Pipfile.lock
+poetry.lock
+conda-lock.yml
+
+# ===============================
+# Build & Deployment
+# ===============================
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+
+# ===============================
+# Security & Sensitive Data
+# ===============================
+# Never commit these!
+api_keys/
+credentials/
+certificates/
+*.pem
+*.key
+*.crt
+
+# ===============================
+# Performance & Profiling
+# ===============================
+*.prof
+.profile
+.benchmarks
+
+# ===============================
+# Backup Files
+# ===============================
+*.backup
+*~
+
+# ===============================
+# Project-Specific Exceptions
+# ===============================
+# Files we DO want to track (override above patterns)
+!data/test_cases/
+!assets/icons/
+!docs/images/
+!components/assets/
+!.env.example
+!.gitignore
+!README.md
+!requirements.txt
+
+# Keep small sample data files
+!data/test_cases/*.json
+!data/test_cases/*.csv
+!data/test_cases/README.md
+
+# Keep essential config templates
+!config.py
+!.env.example
