@@ -27,5 +27,25 @@ class TSPVisualizer:
     """
     Main visualization class for TSP optimization results
     """
-    pass
+    
+    def __init__(self, width: int = 800, height: int = 600, theme: str = 'plotly_white'):
+        """
+        Initialize visualizer
+        
+        Args:
+            width: Default figure width
+            height: Default figure height
+            theme: Plotly theme to use
+        """
+        self.width = width
+        self.height = height
+        self.theme = theme
+        self.colors = {
+            'ga': '#1f77b4',    # Blue
+            'pso': '#ff7f0e',   # Orange
+            'best': '#2ca02c',  # Green
+            'route': '#d62728', # Red
+            'start': '#17becf', # Cyan
+            'waypoint': '#e377c2' # Pink
+        }
 
