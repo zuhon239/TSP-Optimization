@@ -250,3 +250,25 @@ class AlgorithmComparison:
                     })
         
         return pd.DataFrame(data)
+
+
+# Convenience function for quick comparisons
+def compare_algorithms(distance_matrix: np.ndarray, 
+                      num_runs: int = 5,
+                      ga_params: Dict = None,
+                      pso_params: Dict = None) -> Dict:
+    """
+    Quick function to compare GA vs PSO algorithms
+    
+    Args:
+        distance_matrix: TSP distance matrix
+        num_runs: Number of runs per algorithm
+        ga_params: GA parameters
+        pso_params: PSO parameters
+        
+    Returns:
+        Comparison results
+    """
+    comparison = AlgorithmComparison(distance_matrix)
+    results = comparison.run_comparison(num_runs, ga_params, pso_params)
+    return comparison.get_comparison_summary()
