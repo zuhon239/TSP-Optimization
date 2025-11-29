@@ -96,4 +96,72 @@ class PSOSolver(TSPSolver):
         other_cities = [i for i in range(self.num_cities) if i != getattr(self, 'start_point', 0)]
         random.shuffle(other_cities)
         return [getattr(self, 'start_point', 0)] + other_cities
+    
+    def solve(self) -> Tuple[List[int], float]:
+        """Solve TSP using PSO with depot support"""
+        self.logger.info("🐝 Starting PSO optimization...")
+        
+        # Initialize swarm
+        self.particles = []
+        self.personal_best = []
+        self.personal_best_fitness = []
+        
+        for _ in range(self.swarm_size):
+            particle = self._create_depot_route()
+            fitness = self.calculate_route_distance(particle)
+            
+            self.particles.append(particle)
+            self.personal_best.append(particle[:])
+            self.personal_best_fitness.append(fitness)
+            
+            if fitness < self.global_best_fitness:
+                self.global_best_fitness = fitness
+                self.global_best = particle[:]
+        
+        # PSO main loop
+        for iteration in range(self.max_iterations):
+            
+            # Simple PSO update (simplified for TSP)
+            for i in range(self.swarm_size):
+                
+                # Apply random swaps based on personal and global best
+                if random.random() < 0.5:  # Cognitive component
+                    self._apply_random_swaps(self.particles[i], self.personal_best[i])
+                
+                if random.random() < 0.5:  # Social component
+                    self._apply_random_swaps(self.particles[i], self.global_best)
+                
+                # Ensure route starts with depot
+                if hasattr(self, 'ensure_route_starts_with_depot'):
+                    self.particles[i] = self.ensure_route_starts_with_depot(self.particles[i])
+                
+                # Evaluate fitness
+                fitness = self.calculate_route_distance(self.particles[i])
+                
+                # Update personal best
+                if fitness < self.personal_best_fitness[i]:
+                    self.personal_best[i] = self.particles[i][:]
+                    self.personal_best_fitness[i] = fitness
+                    
+                    # Update global best
+                    if fitness < self.global_best_fitness:
+                        self.global_best_fitness = fitness
+                        self.global_best = self.particles[i][:]
+            
+            # Log progress
+            if hasattr(self, 'log_iteration'):
+                self.log_iteration(iteration=iteration, best_distance=self.global_best_fitness)
+            
+            if iteration % 25 == 0 or iteration == self.max_iterations - 1:
+                self.logger.info(f"Iteration {iteration}: Best={self.global_best_fitness:.2f}km")
+        
+        # ✅ Ensure final route starts with depot
+        if hasattr(self, 'ensure_route_starts_with_depot'):
+            final_route = self.ensure_route_starts_with_depot(self.global_best)
+        else:
+            final_route = self.global_best
+        
+        self.logger.info(f"🐝 PSO completed. Best distance: {self.global_best_fitness:.2f}km")
+        
+        return final_route, self.global_best_fitness
 
