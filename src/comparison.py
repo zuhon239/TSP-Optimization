@@ -153,4 +153,44 @@ class AlgorithmComparison:
                 best_overall_route = result['best_route']
             
             run_results.append(result)
-
+    
+    def get_comparison_summary(self) -> Dict[str, Any]:
+        """
+        Get summary comparison statistics
+        
+        Returns:
+            Summary statistics comparing the algorithms
+        """
+        if not self.results or 'GA' not in self.results or 'PSO' not in self.results:
+            raise ValueError("Must run comparison first")
+        
+        ga_results = self.results['GA']
+        pso_results = self.results['PSO']
+        
+        # Performance comparison
+        ga_best = ga_results['best_distance']
+        pso_best = pso_results['best_distance']
+        
+        summary = {
+            'winner': 'GA' if ga_best < pso_best else 'PSO',
+            'performance_gap': abs(ga_best - pso_best),
+            'performance_gap_percent': abs(ga_best - pso_best) / min(ga_best, pso_best) * 100,
+            
+            'ga_summary': {
+                'best_distance': ga_best,
+                'mean_distance': ga_results['mean_distance'],
+                'std_distance': ga_results['std_distance'],
+                'mean_runtime': ga_results['mean_runtime'],
+                'success_rate': ga_results['success_rate']
+            },
+            
+            'pso_summary': {
+                'best_distance': pso_best,
+                'mean_distance': pso_results['mean_distance'],
+                'std_distance': pso_results['std_distance'],
+                'mean_runtime': pso_results['mean_runtime'],
+                'success_rate': pso_results['success_rate']
+            }
+        }
+        
+        return summary
