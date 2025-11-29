@@ -164,4 +164,14 @@ class PSOSolver(TSPSolver):
         self.logger.info(f"🐝 PSO completed. Best distance: {self.global_best_fitness:.2f}km")
         
         return final_route, self.global_best_fitness
+    
+    def _apply_random_swaps(self, route1: List[int], route2: List[int], max_swaps: int = 2):
+        """Apply random swaps between two routes (skip depot)"""
+        for _ in range(random.randint(1, max_swaps)):
+            # Only swap positions after depot (index 1 onwards)
+            if len(route1) > 2:
+                i = random.randint(1, len(route1) - 1)
+                j = random.randint(1, len(route1) - 1)
+                if i != j:
+                    route1[i], route1[j] = route1[j], route1[i]
 
