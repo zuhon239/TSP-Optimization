@@ -90,4 +90,10 @@ class PSOSolver(TSPSolver):
         # ✅ Now safe to use logger (guaranteed to exist)
         self.logger.info(f"🐝 PSO initialized: swarm={self.swarm_size}, "
                         f"iterations={self.max_iterations}, depot={getattr(self, 'start_point', 0)}")
+    
+    def _create_depot_route(self) -> List[int]:
+        """Create a random route that starts from depot"""
+        other_cities = [i for i in range(self.num_cities) if i != getattr(self, 'start_point', 0)]
+        random.shuffle(other_cities)
+        return [getattr(self, 'start_point', 0)] + other_cities
 
