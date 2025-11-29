@@ -2,8 +2,6 @@
 Visualization Module for TSP Optimization
 
 Create charts, graphs, and visualizations for algorithm results
-
-Author: Quân (Frontend Specialist)
 """
 
 import matplotlib.pyplot as plt

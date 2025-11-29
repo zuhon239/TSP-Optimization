@@ -2,8 +2,6 @@
 Particle Swarm Optimization TSP Solver
 
 Custom implementation of PSO for Travelling Salesman Problem with depot support
-
-Author: Quang (Algorithm Specialist)
 """
 
 import numpy as np
