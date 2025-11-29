@@ -114,4 +114,43 @@ class AlgorithmComparison:
                         f"Mean={stats['mean_distance']:.2f}±{stats['std_distance']:.2f}")
         
         return stats
+    
+    def run_comparison(self, algorithm_class, algorithm_name: str,
+                 locations: List[dict] = None,
+                 num_runs: int = 5, **kwargs) -> Dict[str, Any]:
+        """
+        Run comprehensive comparison between GA and PSO
+        
+        Args:
+            num_runs: Number of runs per algorithm
+            ga_params: GA-specific parameters
+            pso_params: PSO-specific parameters
+            parallel: Whether to run algorithms in parallel
+            
+        Returns:
+            Dictionary containing results for both algorithms
+        """
+        self.logger.info(f"Running {algorithm_name} for {num_runs} runs...")
+    
+        run_results = []
+        best_overall_distance = float('inf')
+        best_overall_route = None
+        
+        for run in range(num_runs):
+            self.logger.info(f"  Run {run + 1}/{num_runs}")
+            
+            # ✅ Create and run algorithm with locations
+            solver = algorithm_class(
+                distance_matrix=self.distance_matrix,
+                locations=locations,
+                **kwargs
+            )
+            result = solver.solve_with_stats()
+            
+            # Track best overall solution
+            if result['best_distance'] < best_overall_distance:
+                best_overall_distance = result['best_distance']
+                best_overall_route = result['best_route']
+            
+            run_results.append(result)
 
