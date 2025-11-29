@@ -26,5 +26,16 @@ class AlgorithmComparison:
     """
     Framework for comparing GA and PSO algorithms on TSP instances
     """
-    pass
+    
+    def __init__(self, distance_matrix: np.ndarray):
+        """
+        Initialize comparison framework
+        
+        Args:
+            distance_matrix: Distance matrix for TSP instance
+        """
+        self.distance_matrix = distance_matrix
+        self.num_cities = len(distance_matrix)
+        self.results = {}
+        self.logger = logging.getLogger(__name__)
 
