@@ -48,4 +48,67 @@ class TSPVisualizer:
             'start': '#17becf', # Cyan
             'waypoint': '#e377c2' # Pink
         }
+    
+    def plot_convergence(self, 
+                        convergence_data: Union[Dict, List],
+                        algorithm_name: str = "Algorithm") -> go.Figure:
+        """
+        Plot convergence for single algorithm
+        
+        Args:
+            convergence_data: Convergence data (dict with 'best'/'average' or list)
+            algorithm_name: Name of algorithm
+        
+        Returns:
+            Plotly figure object
+        """
+        # Handle different data formats
+        best_data = None
+        avg_data = None
+        
+        if isinstance(convergence_data, dict):
+            best_data = convergence_data.get('best_distances', convergence_data.get('best'))
+            avg_data = convergence_data.get('average_distances', convergence_data.get('average'))
+        elif isinstance(convergence_data, (list, np.ndarray)):
+            best_data = convergence_data
+        
+        if not best_data or len(best_data) == 0:
+            raise ValueError("No convergence data available")
+        
+        fig = go.Figure()
+        
+        # Best distance line
+        fig.add_trace(go.Scatter(
+            x=list(range(len(best_data))),
+            y=best_data,
+            mode='lines',
+            name='Best Distance',
+            line=dict(color=self.colors['best'], width=3),
+            hovertemplate='Iteration: %{x}<br>Best Distance: %{y:.2f} km<extra></extra>'
+        ))
+        
+        # Average distance line (if available)
+        if avg_data and len(avg_data) > 0:
+            fig.add_trace(go.Scatter(
+                x=list(range(len(avg_data))),
+                y=avg_data,
+                mode='lines',
+                name='Average Distance',
+                line=dict(color='#ff6b6b', width=2, dash='dash'),
+                hovertemplate='Iteration: %{x}<br>Average Distance: %{y:.2f} km<extra></extra>'
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title=dict(text=f"{algorithm_name} - Convergence", x=0.5, font=dict(size=16)),
+            xaxis_title="Iteration",
+            yaxis_title="Distance (km)",
+            template=self.theme,
+            hovermode='x unified',
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            width=self.width,
+            height=self.height
+        )
+        
+        return fig
 
