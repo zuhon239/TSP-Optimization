@@ -194,3 +194,30 @@ class AlgorithmComparison:
         }
         
         return summary
+    
+    def export_results(self, filename: str = None) -> str:
+        """
+        Export comparison results to JSON file
+        
+        Args:
+            filename: Output filename (optional)
+            
+        Returns:
+            Path to exported file
+        """
+        if not filename:
+            timestamp = int(time.time())
+            filename = f"tsp_comparison_{self.num_cities}cities_{timestamp}.json"
+        
+        filepath = os.path.join(config.RESULTS_DIR, filename)
+        
+        try:
+            with open(filepath, 'w') as f:
+                json.dump(self.results, f, indent=2, default=str)
+            
+            self.logger.info(f"Results exported to: {filepath}")
+            return filepath
+            
+        except Exception as e:
+            self.logger.error(f"Failed to export results: {str(e)}")
+            raise
