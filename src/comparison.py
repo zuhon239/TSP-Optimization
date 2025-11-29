@@ -221,3 +221,32 @@ class AlgorithmComparison:
         except Exception as e:
             self.logger.error(f"Failed to export results: {str(e)}")
             raise
+    
+    def create_comparison_dataframe(self) -> pd.DataFrame:
+        """
+        Create pandas DataFrame from comparison results for analysis
+        
+        Returns:
+            DataFrame with individual run results
+        """
+        if not self.results:
+            raise ValueError("Must run comparison first")
+        
+        data = []
+        
+        for algorithm_name in ['GA', 'PSO']:
+            if algorithm_name in self.results:
+                results = self.results[algorithm_name]
+                
+                for i, run in enumerate(results['individual_runs']):
+                    data.append({
+                        'algorithm': algorithm_name,
+                        'run_number': i + 1,
+                        'best_distance': run['best_distance'],
+                        'runtime_seconds': run['runtime_seconds'],
+                        'num_iterations': run['num_iterations'],
+                        'success': run['success'],
+                        'num_cities': run['num_cities']
+                    })
+        
+        return pd.DataFrame(data)
