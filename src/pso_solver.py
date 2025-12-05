@@ -121,23 +121,27 @@ class PSOSolver(TSPSolver):
             
             # Simple PSO update (simplified for TSP)
             for i in range(self.swarm_size):
-                
-                # Apply random swaps based on personal and global best
-                if random.random() < 0.5:  # Cognitive component
+                # 1. Cognitive Update (Học từ bản thân)
+                # Dùng c1 để tính xác suất (chia 3 để chuẩn hóa về khoảng 0.0 - 1.0)
+                prob_cognitive = min(self.c1 / 3.0, 1.0) 
+                if random.random() < prob_cognitive:
                     self._apply_random_swaps(self.particles[i], self.personal_best[i])
                 
-                if random.random() < 0.5:  # Social component
+                # 2. Social Update (Học từ bầy đàn)
+                # Dùng c2 để tính xác suất
+                prob_social = min(self.c2 / 3.0, 1.0)
+                if random.random() < prob_social:
                     self._apply_random_swaps(self.particles[i], self.global_best)
                 
-                # Evaluate fitness
+                # 3. Đánh giá lại (Evaluate)
                 fitness = self.calculate_route_distance(self.particles[i])
                 
-                # Update personal best
+                # 4. Cập nhật Personal Best
                 if fitness < self.personal_best_fitness[i]:
                     self.personal_best[i] = self.particles[i][:]
                     self.personal_best_fitness[i] = fitness
                     
-                    # Update global best
+                    # 5. Cập nhật Global Best
                     if fitness < self.global_best_fitness:
                         self.global_best_fitness = fitness
                         self.global_best = self.particles[i][:]
