@@ -374,6 +374,9 @@ class GASolver(TSPSolver):
             best_individual = self.population[best_idx].copy()
             best_fitness = self.fitness_scores[best_idx]
             
+            # Store initial distance for improvement tracking
+            self.initial_distance = best_fitness
+            
             self.logger.info(f"Initial best distance: {best_fitness:.2f}km")
             
             # Evolution loop

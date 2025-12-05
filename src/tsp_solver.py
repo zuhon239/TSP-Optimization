@@ -40,6 +40,7 @@ class TSPSolver:
         self.end_time = None
         self.iteration_history = []
         self.best_distances = []
+        self.initial_distance = None  # Track initial distance before optimization
         
         # Setup logging
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -262,6 +263,7 @@ class TSPSolver:
                 'algorithm': self.__class__.__name__,
                 'best_route': display_route,
                 'best_distance': best_distance,
+                'initial_distance': self.initial_distance if self.initial_distance else best_distance,
                 'runtime_seconds': self.get_runtime(),
                 'num_cities': self.num_cities,
                 'num_iterations': len(self.iteration_history),
@@ -284,6 +286,7 @@ class TSPSolver:
                 'algorithm': self.__class__.__name__,
                 'best_route': None,
                 'best_distance': float('inf'),
+                'initial_distance': self.initial_distance,
                 'runtime_seconds': self.get_runtime(),
                 'num_cities': self.num_cities,
                 'num_iterations': len(self.iteration_history),

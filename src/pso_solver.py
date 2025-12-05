@@ -113,6 +113,9 @@ class PSOSolver(TSPSolver):
                 self.global_best_fitness = fitness
                 self.global_best = particle[:]
         
+        # Store initial distance for improvement tracking
+        self.initial_distance = self.global_best_fitness
+        
         # PSO main loop
         for iteration in range(self.max_iterations):
             
