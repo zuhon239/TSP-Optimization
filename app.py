@@ -979,6 +979,9 @@ def main():
                     
                     else:
                         # Single algorithm optimization
+                        # Clear previous comparison results when not comparing both
+                        st.session_state.comparison_results = None
+
                         if "GA" in algorithm_mode:
                             algorithm_name = "Genetic Algorithm"
                             with st.spinner(f"🧬 Running {algorithm_name}..."):
