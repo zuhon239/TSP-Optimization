@@ -5,7 +5,6 @@ Author: Hoàng (Team Leader)
 """
 
 from abc import ABC, abstractmethod
-import math
 import numpy as np
 import time
 from typing import List, Tuple, Dict, Any
@@ -41,7 +40,6 @@ class TSPSolver:
         self.end_time = None
         self.iteration_history = []
         self.best_distances = []
-        self.initial_distance = None  # Track initial distance before optimization
         
         # Setup logging
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -260,16 +258,10 @@ class TSPSolver:
             route_info = self.format_route_for_display(display_route)
             
             # Calculate statistics
-            improvement_pct = 0.0
-            if self.initial_distance and self.initial_distance > 0:
-                improvement_pct = ((self.initial_distance - best_distance) / self.initial_distance) * 100
-
             stats = {
                 'algorithm': self.__class__.__name__,
                 'best_route': display_route,
                 'best_distance': best_distance,
-                'initial_distance': self.initial_distance if self.initial_distance else best_distance,
-                'improvement_percentage': improvement_pct,
                 'runtime_seconds': self.get_runtime(),
                 'num_cities': self.num_cities,
                 'num_iterations': len(self.iteration_history),
@@ -288,17 +280,10 @@ class TSPSolver:
             self.end_timer()
             self.logger.error(f"❌ TSP solving failed: {str(e)}")
             
-            best_distance = float('inf')
-            improvement_pct = 0.0
-            if self.initial_distance and self.initial_distance > 0 and math.isfinite(self.initial_distance) and math.isfinite(best_distance):
-                improvement_pct = ((self.initial_distance - best_distance) / self.initial_distance) * 100
-            
             return {
                 'algorithm': self.__class__.__name__,
                 'best_route': None,
                 'best_distance': float('inf'),
-                'initial_distance': self.initial_distance,
-                'improvement_percentage': improvement_pct,
                 'runtime_seconds': self.get_runtime(),
                 'num_cities': self.num_cities,
                 'num_iterations': len(self.iteration_history),
