@@ -1,0 +1,15 @@
+{
+  "name": "5_cities_hcmc",
+  "description": "5-location TSP test case in Ho Chi Minh City",
+  "num_cities": 5,
+  "coordinates": [
+    {"name": "District 1 - Ben Thanh Market", "lat": 10.772114, "lng": 106.698153},
+    {"name": "District 3 - Reunification Palace", "lat": 10.777229, "lng": 106.695900},
+    {"name": "District 5 - Cho Lon Market", "lat": 10.754049, "lng": 106.666123},
+    {"name": "District 7 - Crescent Mall", "lat": 10.729999, "lng": 106.702774},
+    {"name": "Binh Thanh - Landmark 81", "lat": 10.794533, "lng": 106.721800}
+  ],
+  "optimal_distance_km": 45.2,
+  "optimal_route": [0, 1, 4, 3, 2, 0],
+  "notes": "Start from Ben Thanh Market, optimal route covers major districts efficiently"
+}
