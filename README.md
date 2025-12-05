@@ -113,7 +113,7 @@ Benchmarks on 20-city TSP instances:
 
 ## 📄 License
 
-This project is developed for educational purposes at HUFLIT University.
+This project is developed for educational purposes at UEH University.
 
 ---
-**Developed by Team**: Hoàng, Quang, Quân, Nhân | **University**: HUFLIT | **Year**: 2025
+**Developed by Team**: Hoàng, Quang, Quân, Nhân | **University**: UEH | **Year**: 2025
