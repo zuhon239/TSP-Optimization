@@ -264,7 +264,8 @@ class GASolver(TSPSolver):
             
             if gene not in child:
                 # Find next empty position
-                while child[current_pos % size] is not None:
+                # Skip depot slot (index 0) and already-filled positions when wrapping
+                while child[current_pos % size] is not None or (current_pos % size) == 0:
                     current_pos += 1
                 
                 child[current_pos % size] = gene
