@@ -129,10 +129,6 @@ class PSOSolver(TSPSolver):
                 if random.random() < 0.5:  # Social component
                     self._apply_random_swaps(self.particles[i], self.global_best)
                 
-                # Ensure route starts with depot
-                if hasattr(self, 'ensure_route_starts_with_depot'):
-                    self.particles[i] = self.ensure_route_starts_with_depot(self.particles[i])
-                
                 # Evaluate fitness
                 fitness = self.calculate_route_distance(self.particles[i])
                 
