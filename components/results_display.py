@@ -235,7 +235,7 @@ def display_results(
         })
         
         df_route = pd.DataFrame(route_data)
-        st.dataframe(df_route, use_container_width=True, hide_index=True)
+        st.dataframe(df_route, width='stretch', hide_index=True)
     
     # =========================================================================
     # 3. ETA CALCULATOR
@@ -278,7 +278,7 @@ def display_results(
             st.metric("⏱️ Duration", f"{total_time/60:.1f} hrs")
         
         st.write("")
-        st.dataframe(eta_df, use_container_width=True, hide_index=True)
+        st.dataframe(eta_df, width='stretch', hide_index=True)
     
     # =========================================================================
     # 4. CONVERGENCE PLOT - USE VISUALIZER IF AVAILABLE
@@ -296,7 +296,7 @@ def display_results(
                     results['convergence_data'],
                     algorithm_name
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
                 plot_success = True
             except Exception as e:
                 st.warning(f"⚠️ Visualizer failed: {str(e)}")        
@@ -312,7 +312,7 @@ def display_results(
                 try:
                     location_names = [loc['name'] for loc in locations]
                     fig = visualizer.plot_distance_matrix(distance_matrix, location_names)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 except Exception as e:
                     st.error(f"Failed to plot distance matrix: {str(e)}")
             # Route Segment Analysis
@@ -324,7 +324,7 @@ def display_results(
                         distance_matrix,
                         locations
                     )
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, width='stretch')
                 except Exception as e:
                     st.error(f"Failed to plot route segments: {str(e)}")
             else:
@@ -356,78 +356,269 @@ def display_results(
 # COMPARISON DISPLAY
 # =============================================================================
 def display_comparison_results(
-    ga_results: Dict[str, Any],
-    pso_results: Dict[str, Any],
-    locations: List[Dict] = None
+    comparison_results: Dict[str, Any],
+    locations: List[Dict] = None,
+    distance_matrix: np.ndarray = None
 ) -> None:
-    """Display comparison between GA and PSO"""
-    st.write("### 🔄 Algorithm Comparison")
+    """
+    Display comprehensive comparison between GA and PSO algorithms
     
-    col1, col2, col3, col4 = st.columns(4)
+    Args:
+        comparison_results: Results dict from AlgorithmComparison class
+        locations: Location data with coordinates and names
+        distance_matrix: Optional distance matrix for visualization
+    """
+    import streamlit as st
+    
+    # Extract results
+    ga_results = comparison_results.get('ga_results')
+    pso_results = comparison_results.get('pso_results')
+    comparison = comparison_results.get('comparison')
+    
+    # Validate both algorithms completed
+    if not ga_results or not pso_results:
+        st.error("❌ Invalid comparison data")
+        
+        if ga_results:
+            st.write(f"GA Status: {ga_results.get('success', 'Unknown')}")
+            if ga_results.get('error_message'):
+                st.error(f"GA Error: {ga_results['error_message']}")
+        else:
+            st.write("GA Results: None")
+            
+        if pso_results:
+            st.write(f"PSO Status: {pso_results.get('success', 'Unknown')}")
+            if pso_results.get('error_message'):
+                st.error(f"PSO Error: {pso_results['error_message']}")
+        else:
+            st.write("PSO Results: None")
+        
+        return
+    
+    # =========================================================================
+    # SECTION A: Algorithm Configuration Comparison
+    # =========================================================================
+    st.subheader("⚙️ Section A: Algorithm Configuration")
+    
+    # Get parameters from top-level or from results
+    ga_params = comparison_results.get('ga_params') or ga_results.get('parameters', {})
+    pso_params = comparison_results.get('pso_params') or pso_results.get('parameters', {})
+    
+    col1, col2 = st.columns(2)
     
     with col1:
-        ga_dist = ga_results.get('best_distance', 0)
-        pso_dist = pso_results.get('best_distance', 0)
-        winner = "GA" if ga_dist < pso_dist else "PSO"
-        st.metric("🎯 Best Distance", winner)
-        st.caption(f"GA: {ga_dist:.2f} km")
-        st.caption(f"PSO: {pso_dist:.2f} km")
+        st.write("**🧬 Genetic Algorithm Parameters**")
+        ga_config_data = {
+            'Population Size': ga_params.get('population_size', 'N/A'),
+            'Generations': ga_params.get('generations', 'N/A'),
+            'Crossover Rate': f"{ga_params.get('crossover_probability', 0):.2f}",
+            'Mutation Rate': f"{ga_params.get('mutation_probability', 0):.2f}",
+            'Tournament Size': ga_params.get('tournament_size', 'N/A'),
+            'Elite Size': ga_params.get('elite_size', 'N/A')
+        }
+        st.dataframe(pd.DataFrame(list(ga_config_data.items()), columns=['Parameter', 'Value']), width='stretch')
     
     with col2:
-        ga_time = ga_results.get('runtime_seconds', 0)
-        pso_time = pso_results.get('runtime_seconds', 0)
-        winner = "GA" if ga_time < pso_time else "PSO"
-        st.metric("⏱️ Faster", winner)
-        st.caption(f"GA: {ga_time:.2f}s")
-        st.caption(f"PSO: {pso_time:.2f}s")
-    
-    with col3:
-        ga_iter = ga_results.get('num_iterations', 0)
-        pso_iter = pso_results.get('num_iterations', 0)
-        st.metric("🔄 Iterations", "Comparison")
-        st.caption(f"GA: {ga_iter:,}")
-        st.caption(f"PSO: {pso_iter:,}")
-    
-    with col4:
-        ga_imp = ga_results.get('improvement_percentage', 0)
-        pso_imp = pso_results.get('improvement_percentage', 0)
-        winner = "GA" if ga_imp > pso_imp else "PSO"
-        st.metric("📈 Better Improvement", winner)
-        st.caption(f"GA: {ga_imp:.1f}%")
-        st.caption(f"PSO: {pso_imp:.1f}%")
+        st.write("**🐝 Particle Swarm Optimization Parameters**")
+        pso_config_data = {
+            'Swarm Size': pso_params.get('swarm_size', 'N/A'),
+            'Max Iterations': pso_params.get('max_iterations', 'N/A'),
+            'Inertia Weight (w)': f"{pso_params.get('w', 0):.3f}",
+            'Cognitive (c1)': f"{pso_params.get('c1', 0):.3f}",
+            'Social (c2)': f"{pso_params.get('c2', 0):.3f}",
+            'w_min': f"{pso_params.get('w_min', 0):.3f}"
+        }
+        st.dataframe(pd.DataFrame(list(pso_config_data.items()), columns=['Parameter', 'Value']), width='stretch')
     
     st.write("---")
     
-    if ga_results.get('convergence_data') and pso_results.get('convergence_data'):
+    # =========================================================================
+    # SECTION B: Performance Metrics Comparison
+    # =========================================================================
+    st.subheader("📊 Section B: Performance Metrics")
+    
+    # Always display metrics - no conditional
+    # Metric cards with winner indicators
+    col1, col2, col3, col4 = st.columns(4)
+    
+    # Best Distance
+    with col1:
+        ga_dist = ga_results.get('best_distance', float('inf'))
+        pso_dist = pso_results.get('best_distance', float('inf'))
+        winner = "🏆 GA" if ga_dist < pso_dist else "🏆 PSO"
+        st.metric(
+            "Best Distance (km)",
+            f"{min(ga_dist, pso_dist):.2f}",
+            delta=f"{winner}"
+        )
+        st.caption(f"GA: {ga_dist:.2f}km | PSO: {pso_dist:.2f}km")
+    
+    # Runtime
+    with col2:
+        ga_time = ga_results.get('runtime_seconds', float('inf'))
+        pso_time = pso_results.get('runtime_seconds', float('inf'))
+        winner = "🏆 GA" if ga_time < pso_time else "🏆 PSO"
+        st.metric(
+            "Runtime (seconds)",
+            f"{min(ga_time, pso_time):.4f}",
+            delta=f"{winner}"
+        )
+        st.caption(f"GA: {ga_time:.4f}s | PSO: {pso_time:.4f}s")
+    
+    # Improvement Percentage
+    with col3:
+        ga_imp = ga_results.get('improvement_percentage', 0)
+        pso_imp = pso_results.get('improvement_percentage', 0)
+        winner = "🏆 GA" if ga_imp > pso_imp else "🏆 PSO"
+        st.metric(
+            "Improvement (%)",
+            f"{max(ga_imp, pso_imp):.1f}%",
+            delta=f"{winner}"
+        )
+        st.caption(f"GA: {ga_imp:.1f}% | PSO: {pso_imp:.1f}%")
+    
+    # Iterations/Convergence
+    with col4:
+        ga_iter = ga_results.get('num_iterations', 0)
+        pso_iter = pso_results.get('num_iterations', 0)
+        st.metric(
+            "Total Iterations",
+            f"GA: {ga_iter} | PSO: {pso_iter}",
+            delta=f"Difference: {abs(ga_iter - pso_iter)}"
+        )
+    
+    st.write("---")
+    
+    # =========================================================================
+    # SECTION C: Convergence Chart
+    # =========================================================================
+    st.subheader("📈 Section C: Convergence Comparison")
+    
+    ga_convergence = ga_results.get('convergence_data', {})
+    pso_convergence = pso_results.get('convergence_data', {})
+    ga_success = ga_results.get('success', False)
+    pso_success = pso_results.get('success', False)
+    
+    if ga_convergence.get('best_distances') and pso_convergence.get('best_distances'):
         fig = go.Figure()
         
-        ga_conv = ga_results['convergence_data'].get('best', [])
-        if ga_conv:
-            fig.add_trace(go.Scatter(
-                x=list(range(len(ga_conv))),
-                y=ga_conv,
-                mode='lines',
-                name='GA',
-                line=dict(color='#1976d2', width=3)
-            ))
+        # GA convergence
+        ga_dists = ga_convergence['best_distances']
+        fig.add_trace(go.Scatter(
+            x=list(range(len(ga_dists))),
+            y=ga_dists,
+            mode='lines',
+            name='GA',
+            line=dict(color='#1f77b4', width=2),
+            hovertemplate='<b>GA</b><br>Iteration: %{x}<br>Distance: %{y:.2f}km<extra></extra>'
+        ))
         
-        pso_conv = pso_results['convergence_data'].get('best', [])
-        if pso_conv:
-            fig.add_trace(go.Scatter(
-                x=list(range(len(pso_conv))),
-                y=pso_conv,
-                mode='lines',
-                name='PSO',
-                line=dict(color='#ff6b6b', width=3)
-            ))
+        # PSO convergence
+        pso_dists = pso_convergence['best_distances']
+        fig.add_trace(go.Scatter(
+            x=list(range(len(pso_dists))),
+            y=pso_dists,
+            mode='lines',
+            name='PSO',
+            line=dict(color='#ff7f0e', width=2),
+            hovertemplate='<b>PSO</b><br>Iteration: %{x}<br>Distance: %{y:.2f}km<extra></extra>'
+        ))
         
+        # Update layout
         fig.update_layout(
             title="Algorithm Convergence Comparison",
-            xaxis_title="Iteration",
-            yaxis_title="Distance (km)",
+            xaxis_title="Iteration / Generation",
+            yaxis_title="Best Distance Found (km)",
             hovermode='x unified',
             template='plotly_white',
-            height=400
+            height=450,
+            showlegend=True,
+            legend=dict(x=0.7, y=0.95)
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
+    else:
+        st.info("Convergence data not available for both algorithms")
+    
+    st.write("---")
+    
+    # =========================================================================
+    # SECTION D: Route Quality Comparison
+    # =========================================================================
+    st.subheader("🛣️ Section D: Route Quality Comparison")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**🧬 Genetic Algorithm Route**")
+        ga_route = ga_results.get('best_route', [])
+        if locations and ga_route:
+            ga_route_names = [locations[i].get('name', f'City {i}') for i in ga_route]
+            st.caption(" → ".join(ga_route_names) + " → " + ga_route_names[0])
+            st.caption(f"Route indices: {ga_route}")
+        st.metric("Distance", f"{ga_results.get('best_distance', 0):.2f} km")
+    
+    with col2:
+        st.write("**🐝 PSO Route**")
+        pso_route = pso_results.get('best_route', [])
+        if locations and pso_route:
+            pso_route_names = [locations[i].get('name', f'City {i}') for i in pso_route]
+            st.caption(" → ".join(pso_route_names) + " → " + pso_route_names[0])
+            st.caption(f"Route indices: {pso_route}")
+        st.metric("Distance", f"{pso_results.get('best_distance', 0):.2f} km")
+    
+    st.write("---")
+    
+    # =========================================================================
+    # SECTION E: Statistical Summary Table
+    # =========================================================================
+    st.subheader("📋 Section E: Detailed Statistical Summary")
+    
+    # Build summary data
+    summary_data = {
+        'Metric': [
+            'Algorithm',
+            'Best Distance (km)',
+            'Initial Distance (km)',
+            'Worst Distance (km)',
+            'Mean Distance (km)',
+            'Std. Deviation (km)',
+            'Runtime (seconds)',
+            'Iterations',
+            'Improvement (%)',
+            'Success'
+        ],
+        'Genetic Algorithm': [
+            'GA',
+            f"{ga_results.get('best_distance', 0):.2f}",
+            f"{ga_convergence.get('best_distances', [0])[0]:.2f}" if ga_convergence.get('best_distances') else 'N/A',
+            f"{ga_results.get('best_distance', 0):.2f}",  # For single run
+            f"{ga_results.get('best_distance', 0):.2f}",
+            f"{ga_results.get('std_distance', 0):.2f}" if 'std_distance' in ga_results else 'N/A',
+            f"{ga_results.get('runtime_seconds', 0):.4f}",
+            f"{ga_results.get('num_iterations', 0)}",
+            f"{comparison.get('ga_improvement_pct', 0):.1f}%" if comparison else 'N/A',
+            "✅ Yes" if ga_success else "❌ No"
+        ],
+        'Particle Swarm Optimization': [
+            'PSO',
+            f"{pso_results.get('best_distance', 0):.2f}",
+            f"{pso_convergence.get('best_distances', [0])[0]:.2f}" if pso_convergence.get('best_distances') else 'N/A',
+            f"{pso_results.get('best_distance', 0):.2f}",
+            f"{pso_results.get('best_distance', 0):.2f}",
+            f"{pso_results.get('std_distance', 0):.2f}" if 'std_distance' in pso_results else 'N/A',
+            f"{pso_results.get('runtime_seconds', 0):.4f}",
+            f"{pso_results.get('num_iterations', 0)}",
+            f"{comparison.get('pso_improvement_pct', 0):.1f}%" if comparison else 'N/A',
+            "✅ Yes" if pso_success else "❌ No"
+        ]
+    }
+    
+    summary_df = pd.DataFrame(summary_data)
+    # Convert all columns to string to avoid PyArrow conversion issues
+    summary_df = summary_df.astype(str)
+    st.dataframe(summary_df, width='stretch', use_container_width=True)
+    
+    st.write("---")
+    
+

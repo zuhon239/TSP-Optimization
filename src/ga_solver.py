@@ -38,7 +38,7 @@ class GASolver(TSPSolver):
                  tournament_size: int = None,
                  elite_size: int = None):
         """Initialize GA solver with custom implementation"""
-        
+        self.logger = logging.getLogger(f"{self.__class__.__name__}")
         try:
             # Call parent class first
             super().__init__(distance_matrix, locations)
@@ -49,14 +49,16 @@ class GASolver(TSPSolver):
                 self.logger.warning("⚠️ Created fallback logger for GASolver")
                 
         except Exception as e:
-            # Last resort initialization if parent fails
+            self.logger = logging.getLogger(f"{self.__class__.__name__}")
+            
+            # Last resort initialization
             self.distance_matrix = np.array(distance_matrix)
             self.num_cities = len(distance_matrix)
             self.locations = locations or []
             self.start_point = 0
-            self.logger = logging.getLogger(f"{self.__class__.__name__}")
             self.iteration_history = []
             self.best_distances = []
+            
             self.logger.error(f"❌ Parent TSPSolver init failed: {e}")
         
         # Load parameters from config or use provided values

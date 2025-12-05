@@ -268,6 +268,9 @@ if 'route_coords' not in st.session_state:
 if 'optimization_results' not in st.session_state:
     st.session_state.optimization_results = None
 
+if 'comparison_results' not in st.session_state:
+    st.session_state.comparison_results = None
+
 if 'geo_utils' not in st.session_state:
     if GeoUtils and MODULES_STATUS.get('GeoUtils', False):
         try:
@@ -497,11 +500,12 @@ def main():
             st.session_state.optimized_route = None
             st.session_state.route_coords = None
             st.session_state.optimization_results = None
+            st.session_state.comparison_results = None
             st.session_state.last_map_center = None
             st.session_state.last_map_zoom = None
             st.success("✅ Cleared all data!")
             st.rerun()
-    
+
     # Render integrated map
     current_locations = render_integrated_map(
         initial_locations=st.session_state.clicked_locations,
@@ -511,7 +515,7 @@ def main():
         zoom=map_zoom,
         height=600
     )
-    
+
     # Update session state
     st.session_state.clicked_locations = current_locations
     st.session_state.locations = current_locations
@@ -739,60 +743,141 @@ def main():
             for error in validation['errors']:
                 st.error(error)
         else:
-            # Get algorithm from sidebar
-            algorithm_choice = config_params.get('algorithm_choice', 'Genetic Algorithm (GA)')
+            # ========================
+            # ALGORITHM SELECTION
+            # ========================
+            st.subheader("🎯 Select Optimization Mode")
             
-            # Configuration display
-            col1, col2, col3 = st.columns([2, 3, 2])
+            algorithm_mode = st.radio(
+                "Choose how to run the optimization:",
+                ["🧬 Genetic Algorithm (GA)", "🐝 Particle Swarm Optimization (PSO)", "🔬 Compare Both"],
+                horizontal=True,
+                help="GA = Evolution-based | PSO = Swarm-based | Compare = Run both algorithms"
+            )
             
-            with col1:
-                if "Genetic" in algorithm_choice:
-                    st.info("**🧬 Genetic Algorithm**\n\nEvolution-based optimization using crossover, mutation, and selection.")
-                else:
-                    st.info("**🐝 Particle Swarm**\n\nSwarm intelligence inspired by bird flocking behavior.")
+            st.write("")
             
-            with col2:
-                st.write("**⚙️ Current Configuration:**")
-                
-                if "Genetic" in algorithm_choice:
+            # ========================
+            # PARAMETERS DISPLAY
+            # ========================
+            if algorithm_mode == "🧬 Genetic Algorithm (GA)":
+                with st.expander("⚙️ GA Parameters", expanded=True):
+                    col1, col2, col3 = st.columns(3)
+                    
                     ga_params = config_params.get('ga_params', GA_CONFIG)
-                    config_text = f"""
+                    
+                    with col1:
+                        st.metric("Population Size", ga_params.get('population_size', 50))
+                        st.metric("Generations", ga_params.get('generations', 100))
+                    
+                    with col2:
+                        st.metric("Crossover Rate", f"{ga_params.get('crossover_probability', 0.8):.2f}")
+                        st.metric("Mutation Rate", f"{ga_params.get('mutation_probability', 0.05):.3f}")
+                    
+                    with col3:
+                        st.metric("Tournament Size", ga_params.get('tournament_size', 3))
+                        st.metric("Elite Size", ga_params.get('elite_size', 2))
+                    
+                    st.caption("💡 Adjust parameters in sidebar → 🔧 Algorithm Configuration")
+            
+            elif algorithm_mode == "🐝 Particle Swarm Optimization (PSO)":
+                with st.expander("⚙️ PSO Parameters", expanded=True):
+                    col1, col2, col3 = st.columns(3)
+                    
+                    pso_params = config_params.get('pso_params', PSO_CONFIG)
+                    
+                    with col1:
+                        st.metric("Swarm Size", pso_params.get('swarm_size', 30))
+                        st.metric("Max Iterations", pso_params.get('max_iterations', 100))
+                    
+                    with col2:
+                        st.metric("Inertia (w)", f"{pso_params.get('w', 0.729):.3f}")
+                        st.metric("Cognitive (c1)", f"{pso_params.get('c1', 1.494):.2f}")
+                    
+                    with col3:
+                        st.metric("Social (c2)", f"{pso_params.get('c2', 1.494):.2f}")
+                        st.metric("Min Inertia (w_min)", f"{pso_params.get('w_min', 0.4):.3f}")
+                    
+                    st.caption("💡 Adjust parameters in sidebar → 🔧 Algorithm Configuration")
+            
+            else:  # Compare Both
+                st.info("**🔬 Running Both Algorithms for Comparison**")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**🧬 GA Parameters:**")
+                    ga_params = config_params.get('ga_params', GA_CONFIG)
+                    ga_config_text = f"""
                     - Population: `{ga_params.get('population_size', 50)}`
                     - Generations: `{ga_params.get('generations', 100)}`
                     - Crossover: `{ga_params.get('crossover_probability', 0.8):.2f}`
                     - Mutation: `{ga_params.get('mutation_probability', 0.05):.3f}`
+                    - Tournament: `{ga_params.get('tournament_size', 3)}`
+                    - Elite: `{ga_params.get('elite_size', 2)}`
                     """
-                else:
+                    st.markdown(ga_config_text)
+                
+                with col2:
+                    st.write("**🐝 PSO Parameters:**")
                     pso_params = config_params.get('pso_params', PSO_CONFIG)
-                    config_text = f"""
+                    pso_config_text = f"""
                     - Swarm Size: `{pso_params.get('swarm_size', 30)}`
                     - Iterations: `{pso_params.get('max_iterations', 100)}`
                     - Inertia (w): `{pso_params.get('w', 0.729):.3f}`
-                    - Cognitive (c1): `{pso_params.get('c1', 1.494):.2f}`
-                    - Social (c2): `{pso_params.get('c2', 1.494):.2f}`
+                    - c1: `{pso_params.get('c1', 1.494):.2f}`
+                    - c2: `{pso_params.get('c2', 1.494):.2f}`
+                    - w_min: `{pso_params.get('w_min', 0.4):.3f}`
                     """
-                
-                st.markdown(config_text)
-                st.caption("💡 Adjust in sidebar → 🔧 Algorithm Configuration")
+                    st.markdown(pso_config_text)
+            
+            # Problem Summary
+            st.write("---")
+            st.write("**📊 Problem Summary:**")
+            col1, col2, col3, col4 = st.columns(4)
+            
+            num_locs = len(st.session_state.clicked_locations)
+            num_routes = num_locs * (num_locs - 1)
+            
+            with col1:
+                st.metric("Locations", num_locs)
+            
+            with col2:
+                st.metric("Possible Routes", f"{num_routes:,}")
             
             with col3:
-                st.write("**📊 Problem Summary:**")
-                num_locs = len(st.session_state.clicked_locations)
-                num_routes = num_locs * (num_locs - 1)
-                
-                st.metric("Locations", num_locs)
-                st.metric("Possible Routes", f"{num_routes:,}")
+                if num_locs > 0:
+                    total_nodes = num_locs
+                    st.metric("Search Space", f"{total_nodes}!")
+            
+            with col4:
+                if num_locs > 0:
+                    st.metric("Problem Type", "TSP")
             
             st.write("")
             
-            # Big optimize button
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
+            # ========================
+            # BUTTONS - BASED ON MODE
+            # ========================
+            if algorithm_mode == "🧬 Genetic Algorithm (GA)":
                 optimize_clicked = st.button(
-                    f"🚀 Optimize with {algorithm_choice.split('(')[0].strip()}",
+                    "🧬 Optimize with GA",
                     type="primary",
                     use_container_width=True,
-                    help=f"Start optimization using {algorithm_choice}"
+                    help="Run Genetic Algorithm for TSP optimization"
+                )
+            elif algorithm_mode == "🐝 Particle Swarm Optimization (PSO)":
+                optimize_clicked = st.button(
+                    "🐝 Optimize with PSO",
+                    type="primary",
+                    use_container_width=True,
+                    help="Run Particle Swarm Optimization for TSP optimization"
+                )
+            else:  # Compare Both
+                optimize_clicked = st.button(
+                    "🔬 Compare GA vs PSO",
+                    type="primary",
+                    use_container_width=True,
+                    help="Run both GA and PSO for comprehensive comparison"
                 )
             
             # Optimization process
@@ -804,18 +889,108 @@ def main():
                     status_text.text("🔄 Initializing algorithm...")
                     progress_bar.progress(0.2)
                     
-                    with st.spinner(f"🧬 Running {algorithm_choice}..."):
-                        # Run algorithm
-                        if "Genetic" in algorithm_choice:
-                            status_text.text("🧬 Evolving population...")
-                            progress_bar.progress(0.4)
+                    # Determine which algorithm(s) to run
+                    if algorithm_mode == "🔬 Compare Both":
+                        # Run comparison
+                        with st.spinner("🔬 Running comparison analysis..."):
+                            status_text.text("🔄 Starting comparison...")
+                            progress_bar.progress(0.3)
                             
-                            results = run_genetic_algorithm(st.session_state.distance_matrix, config_params)
+                            # Get parameters
+                            ga_params = config_params.get('ga_params', GA_CONFIG)
+                            pso_params = config_params.get('pso_params', PSO_CONFIG)
+                            
+                            # Run both algorithms
+                            from src.comparison import compare_algorithms
+                            
+                            status_text.text("🧬 Running Genetic Algorithm...")
+                            progress_bar.progress(0.4)
+                            ga_results = run_genetic_algorithm(st.session_state.distance_matrix, {'ga_params': ga_params})
+                            
+                            status_text.text("🐝 Running Particle Swarm Optimization...")
+                            progress_bar.progress(0.6)
+                            pso_results = run_pso_algorithm(st.session_state.distance_matrix, {'pso_params': pso_params})
+                            
+                            status_text.text("📊 Generating comparison analysis...")
+                            progress_bar.progress(0.8)
+                            
+                            if ga_results and pso_results and ga_results.get('success') and pso_results.get('success'):
+                                # Generate comparison data
+                                comparison_data = {
+                                    'valid': True,
+                                    'ga_distance': ga_results.get('best_distance', 0),
+                                    'pso_distance': pso_results.get('best_distance', 0),
+                                    'ga_runtime': ga_results.get('runtime_seconds', 0),
+                                    'pso_runtime': pso_results.get('runtime_seconds', 0),
+                                    'ga_improvement_pct': ((ga_results.get('initial_distance', 0) - ga_results.get('best_distance', 0)) / max(ga_results.get('initial_distance', 1), 0.0001)) * 100,
+                                    'pso_improvement_pct': ((pso_results.get('initial_distance', 0) - pso_results.get('best_distance', 0)) / max(pso_results.get('initial_distance', 1), 0.0001)) * 100,
+                                }
+                                
+                                # Determine winners
+                                if comparison_data['ga_distance'] < comparison_data['pso_distance']:
+                                    comparison_data['winner_distance'] = 'GA'
+                                    comparison_data['distance_difference'] = comparison_data['pso_distance'] - comparison_data['ga_distance']
+                                    comparison_data['distance_difference_pct'] = (comparison_data['distance_difference'] / comparison_data['pso_distance']) * 100 if comparison_data['pso_distance'] > 0 else 0
+                                elif comparison_data['pso_distance'] < comparison_data['ga_distance']:
+                                    comparison_data['winner_distance'] = 'PSO'
+                                    comparison_data['distance_difference'] = comparison_data['ga_distance'] - comparison_data['pso_distance']
+                                    comparison_data['distance_difference_pct'] = (comparison_data['distance_difference'] / comparison_data['ga_distance']) * 100 if comparison_data['ga_distance'] > 0 else 0
+                                else:
+                                    comparison_data['winner_distance'] = 'Tie'
+                                    comparison_data['distance_difference'] = 0
+                                    comparison_data['distance_difference_pct'] = 0
+                                
+                                if comparison_data['ga_runtime'] < comparison_data['pso_runtime']:
+                                    comparison_data['winner_runtime'] = 'GA'
+                                    comparison_data['runtime_difference'] = comparison_data['pso_runtime'] - comparison_data['ga_runtime']
+                                    comparison_data['runtime_difference_pct'] = (comparison_data['runtime_difference'] / comparison_data['pso_runtime']) * 100 if comparison_data['pso_runtime'] > 0 else 0
+                                elif comparison_data['pso_runtime'] < comparison_data['ga_runtime']:
+                                    comparison_data['winner_runtime'] = 'PSO'
+                                    comparison_data['runtime_difference'] = comparison_data['ga_runtime'] - comparison_data['pso_runtime']
+                                    comparison_data['runtime_difference_pct'] = (comparison_data['runtime_difference'] / comparison_data['ga_runtime']) * 100 if comparison_data['ga_runtime'] > 0 else 0
+                                else:
+                                    comparison_data['winner_runtime'] = 'Tie'
+                                    comparison_data['runtime_difference'] = 0
+                                    comparison_data['runtime_difference_pct'] = 0
+                                
+                                if comparison_data['ga_improvement_pct'] > comparison_data['pso_improvement_pct']:
+                                    comparison_data['winner_improvement'] = 'GA'
+                                elif comparison_data['pso_improvement_pct'] > comparison_data['ga_improvement_pct']:
+                                    comparison_data['winner_improvement'] = 'PSO'
+                                else:
+                                    comparison_data['winner_improvement'] = 'Tie'
+                                
+                                # Store comparison results
+                                st.session_state.comparison_results = {
+                                    'ga_results': ga_results,
+                                    'pso_results': pso_results,
+                                    'ga_params': ga_params,
+                                    'pso_params': pso_params,
+                                    'comparison': comparison_data
+                                }
+                                
+                                progress_bar.progress(1.0)
+                                status_text.text("✅ Comparison completed!")
+                                st.balloons()
+                                st.success("✅ Comparison Analysis Complete!")
+                            else:
+                                status_text.text("❌ One or both algorithms failed")
+                                st.error("❌ Comparison failed. Please check your parameters.")
+                    
+                    else:
+                        # Single algorithm optimization
+                        if "GA" in algorithm_mode:
+                            algorithm_name = "Genetic Algorithm"
+                            with st.spinner(f"🧬 Running {algorithm_name}..."):
+                                status_text.text("🧬 Evolving population...")
+                                progress_bar.progress(0.4)
+                                results = run_genetic_algorithm(st.session_state.distance_matrix, config_params)
                         else:
-                            status_text.text("🐝 Optimizing swarm...")
-                            progress_bar.progress(0.4)
-                            
-                            results = run_pso_algorithm(st.session_state.distance_matrix, config_params)
+                            algorithm_name = "Particle Swarm Optimization"
+                            with st.spinner(f"🐝 Running {algorithm_name}..."):
+                                status_text.text("🐝 Optimizing swarm...")
+                                progress_bar.progress(0.4)
+                                results = run_pso_algorithm(st.session_state.distance_matrix, config_params)
                         
                         status_text.text("📊 Processing results...")
                         progress_bar.progress(0.7)
@@ -874,7 +1049,7 @@ def main():
                             progress_bar.empty()
                             status_text.empty()
                             st.error("❌ Optimization failed: No valid solution found")
-                            
+                    
                 except Exception as e:
                     progress_bar.empty()
                     status_text.empty()
@@ -885,8 +1060,7 @@ def main():
                         st.write("**Possible causes:**")
                         st.write("- Algorithm parameters are invalid")
                         st.write("- Distance matrix has issues")
-                        st.write("- Insufficient locations for optimization")
-    
+                        st.write("- Insufficient locations for optimization")    
     # =========================================================================
     # SECTION 5: RESULTS DISPLAY
     # =========================================================================
@@ -912,6 +1086,25 @@ def main():
             )
         except Exception as e:
             st.error(f"❌ Failed to display results: {str(e)}")
+            
+            with st.expander("🔍 Error Details", expanded=False):
+                st.code(traceback.format_exc())
+    
+    # =========================================================================
+    # SECTION 6: ALGORITHM COMPARISON RESULTS
+    # =========================================================================
+    if st.session_state.comparison_results:
+        st.write("---")
+        st.subheader("🔬 Algorithm Comparison Results")
+        
+        try:
+            display_comparison_results(
+                st.session_state.comparison_results,
+                st.session_state.clicked_locations,
+                st.session_state.distance_matrix
+            )
+        except Exception as e:
+            st.error(f"❌ Failed to display comparison: {str(e)}")
             
             with st.expander("🔍 Error Details", expanded=False):
                 st.code(traceback.format_exc())
