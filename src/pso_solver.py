@@ -164,12 +164,40 @@ class PSOSolver(TSPSolver):
         return final_route, self.global_best_fitness
     
     def _apply_random_swaps(self, route1: List[int], route2: List[int], max_swaps: int = 2):
-        """Apply random swaps between two routes (skip depot)"""
-        for _ in range(random.randint(1, max_swaps)):
-            # Only swap positions after depot (index 1 onwards)
-            if len(route1) > 2:
-                i = random.randint(1, len(route1) - 1)
-                j = random.randint(1, len(route1) - 1)
-                if i != j:
-                    route1[i], route1[j] = route1[j], route1[i]
-
+        """
+        Apply directed swaps to move route1 closer to route2
+        (Thực hiện hoán đổi có định hướng để route1 dần dần giống route2)
+        Args:
+            route1: Lộ trình cần sửa (Hạt hiện tại)
+            route2: Lộ trình mẫu (PBest hoặc GBest)
+            max_swaps: Số lần hoán đổi tối đa (Tương đương vận tốc)
+        """
+        swaps_done = 0
+        
+        # Duyệt qua từng vị trí trong lộ trình (bỏ qua Depot ở vị trí 0)
+        for i in range(1, len(route1)):
+            # Nếu đã hoán đổi đủ số lượng cho phép thì dừng lại (Giữ lại sự đa dạng)
+            if swaps_done >= max_swaps:
+                break
+                
+            # Nếu tại vị trí i, thành phố của mình khác thành phố mẫu
+            if route1[i] != route2[i]:
+                target_city = route2[i]
+                
+                # Tìm vị trí hiện tại của thành phố đó trong route1
+                # (Chỉ tìm từ i trở về sau để không phá hỏng phần đã làm xong)
+                try:
+                    current_pos = -1
+                    # Tìm thủ công hoặc dùng index (nhưng phải cẩn thận vùng tìm kiếm)
+                    for k in range(i, len(route1)):
+                        if route1[k] == target_city:
+                            current_pos = k
+                            break
+                    
+                    if current_pos != -1:
+                        # Thực hiện hoán đổi (Swap)
+                        route1[i], route1[current_pos] = route1[current_pos], route1[i]
+                        swaps_done += 1
+                        
+                except ValueError:
+                    continue
