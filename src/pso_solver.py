@@ -35,22 +35,19 @@ class PSOSolver(TSPSolver):
                  w_max: float = None):
         """Initialize PSO solver with depot support"""
         
+        # ✅ Initialize logger BEFORE calling parent (in case parent needs logging)
+        self.logger = logging.getLogger(f"{self.__class__.__name__}")
+        
         try:
-            # ✅ Call parent class first
+            # ✅ Call parent class
             super().__init__(distance_matrix, locations)
             
-            # ✅ Verify logger exists after parent init
-            if not hasattr(self, 'logger') or self.logger is None:
-                self.logger = logging.getLogger(f"{self.__class__.__name__}")
-                self.logger.warning("⚠️ Created fallback logger for PSOSolver")
-            
         except Exception as e:
-            # ✅ Last resort initialization if parent fails
+            # ✅ Fallback initialization if parent fails
             self.distance_matrix = np.array(distance_matrix)
             self.num_cities = len(distance_matrix)
             self.locations = locations or []
             self.start_point = 0
-            self.logger = logging.getLogger(f"{self.__class__.__name__}")
             self.iteration_history = []
             self.best_distances = []
             self.logger.error(f"❌ Parent TSPSolver init failed: {e}")

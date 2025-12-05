@@ -181,7 +181,7 @@ def import_component_modules():
     
     # Import Google Maps UI
     try:
-        from google_maps_ui import render_integrated_map, validate_locations
+        from components.google_maps_ui import render_integrated_map, validate_locations
         MODULES_STATUS['google_maps_ui'] = True
         import_logs.append(("✅", "Google Maps UI component loaded"))
     except ImportError as e:
@@ -192,7 +192,7 @@ def import_component_modules():
     
     # Import Sidebar UI
     try:
-        from sidebar import render_sidebar
+        from components.sidebar import render_sidebar
         MODULES_STATUS['sidebar'] = True
         import_logs.append(("✅", "Sidebar component loaded"))
     except ImportError as e:
@@ -202,7 +202,7 @@ def import_component_modules():
     
     # Import Results Display UI
     try:
-        from results_display import display_results, display_comparison_results
+        from components.results_display import display_results, display_comparison_results
         MODULES_STATUS['results_display'] = True
         import_logs.append(("✅", "Results Display component loaded"))
     except ImportError as e:
@@ -834,7 +834,7 @@ def main():
                                     route_locs.append(route_locs[0])
                                     coordinates = [[loc['lng'], loc['lat']] for loc in route_locs]
                                     
-                                    from results_display import get_openroute_directions
+                                    from components.results_display import get_openroute_directions
                                     openroute_key = os.getenv('OPENROUTE_API_KEY')
                                     if openroute_key:
                                         directions = get_openroute_directions(coordinates, openroute_key)
