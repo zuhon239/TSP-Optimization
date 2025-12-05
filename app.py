@@ -101,7 +101,7 @@ def import_src_modules():
     
     # Import TSP Solver base class
     try:
-        from tsp_solver import TSPSolver
+        from src.tsp_solver import TSPSolver
         MODULES_STATUS['TSPSolver'] = True
         import_logs.append(("✅", "TSPSolver (base class) loaded"))
     except ImportError as e:
@@ -111,7 +111,7 @@ def import_src_modules():
     
     # Import Genetic Algorithm
     try:
-        from ga_solver import GASolver
+        from src.ga_solver import GASolver
         MODULES_STATUS['GASolver'] = True
         import_logs.append(("✅", "GASolver (Genetic Algorithm) loaded"))
     except ImportError as e:
@@ -121,7 +121,7 @@ def import_src_modules():
     
     # Import Particle Swarm Optimization
     try:
-        from pso_solver import PSOSolver
+        from src.pso_solver import PSOSolver
         MODULES_STATUS['PSOSolver'] = True
         import_logs.append(("✅", "PSOSolver (Particle Swarm Optimization) loaded"))
     except ImportError as e:
@@ -131,7 +131,7 @@ def import_src_modules():
     
     # Import Google Maps utilities
     try:
-        from geo_utils import GeoUtils
+        from src.geo_utils import GeoUtils
         MODULES_STATUS['GeoUtils'] = True
         import_logs.append(("✅", "GeoUtils (Google Maps API) loaded"))
     except ImportError as e:
@@ -141,7 +141,7 @@ def import_src_modules():
     
     # Import Algorithm Comparison
     try:
-        from comparison import AlgorithmComparison
+        from src.comparison import AlgorithmComparison
         MODULES_STATUS['AlgorithmComparison'] = True
         import_logs.append(("✅", "AlgorithmComparison loaded"))
     except ImportError as e:
@@ -151,7 +151,7 @@ def import_src_modules():
     
     # Import Visualizer
     try:
-        from visualizer import TSPVisualizer
+        from src.visualizer import TSPVisualizer
         MODULES_STATUS['Visualizer'] = True
         import_logs.append(("✅", "TSPVisualizer loaded"))
     except ImportError as e:
