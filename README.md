@@ -70,7 +70,7 @@ streamlit run app.py
 ✅ Code review và merge code của team
 
 - **Quang** (Algorithm Specialist): 
-✅ Implement Particle Swarm Optimization (PSO) - thuật toán thứ 2 (7.1 KB)
+✅ Implement Particle Swarm Optimization (PSO) - thuật toán thứ 2 
 ✅ Xây dựng Algorithm Comparison Framework - so sánh hiệu năng GA vs PSO 
 ✅ Phát triển Visualizer module - biểu đồ convergence, performance charts 
 ✅ Testing và đánh giá hiệu năng các thuật toán
@@ -86,9 +86,9 @@ streamlit run app.py
 ✅ OpenStreetMap integration
 
 - **Nhân** (UI Developer, Results Display Specialist): 
-✅ Đồng phát triển Visualizer với Quang - phần UI display (12.8 KB shared)
-✅ Xây dựng Sidebar Configuration UI - parameter controls (6.7 KB)
-✅ Phát triển Results Display Module - charts, tables, metrics (15.8 KB - file UI lớn nhất)
+✅ Đồng phát triển Visualizer với Quang - phần UI display 
+✅ Xây dựng Sidebar Configuration UI - parameter controls 
+✅ Phát triển Results Display Module - charts, tables, metrics 
 ✅ Thiết kế data presentation layer
 ✅ Integration testing cho UI components
 ✅ Export functionality (CSV, JSON)
