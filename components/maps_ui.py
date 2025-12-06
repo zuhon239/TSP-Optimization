@@ -105,6 +105,11 @@ def render_integrated_map(
 ) -> List[Dict]:
     """
     Integrated map: picking + route visualization on SAME map
+    
+    ✅ OPTIMIZATION: Prevents flashing/reloading on every click
+    - Deduplicates click events to avoid double processing
+    - Only reruns when a NEW location is actually added
+    - Preserves map position/zoom between interactions
     """
     if center is None:
         center = {'lat': 10.762622, 'lng': 106.660172}
@@ -112,7 +117,7 @@ def render_integrated_map(
     if initial_locations is None:
         initial_locations = []
     
-    # ✅ Initialize session_state
+    # ✅ Initialize session_state for location management
     if 'clicked_locations' not in st.session_state:
         st.session_state.clicked_locations = []
     
@@ -122,14 +127,24 @@ def render_integrated_map(
     if 'location_to_delete' not in st.session_state:
         st.session_state.location_to_delete = None
     
+    # ✅ NEW: Track last processed click to prevent duplicates
+    if 'last_processed_click' not in st.session_state:
+        st.session_state.last_processed_click = None
+    
+    # ✅ NEW: Preserve map view across reruns
+    if 'map_center' not in st.session_state:
+        st.session_state.map_center = center
+    if 'map_zoom' not in st.session_state:
+        st.session_state.map_zoom = zoom
+    
     if not HAS_FOLIUM:
         st.error("❌ streamlit-folium not installed")
         return st.session_state.clicked_locations
     
-    # ✅ Create Folium map
+    # ✅ Use preserved map center/zoom to avoid jumping
     m = folium.Map(
-        location=[center['lat'], center['lng']],
-        zoom_start=zoom,
+        location=[st.session_state.map_center['lat'], st.session_state.map_center['lng']],
+        zoom_start=st.session_state.map_zoom,
         tiles='OpenStreetMap',
         control_scale=True
     )
@@ -291,42 +306,61 @@ def render_integrated_map(
     # Click handler
     m.add_child(folium.LatLngPopup())
     
-    # ✅ Render map
+    # ✅ Render map with unique key to prevent unnecessary reruns
+    # Using len(clicked_locations) as part of key to detect actual changes
+    map_key = f"integrated_map_{len(st.session_state.clicked_locations)}"
+    
     map_data = st_folium(
         m,
         width=None,
         height=height,
         returned_objects=['last_clicked'],
-        key="integrated_map"
+        key=map_key
     )
     
-    # ✅ Capture clicks (only in pick mode)
+    # ✅ OPTIMIZED: Capture clicks (only in pick mode) with deduplication
     if not optimized_route and map_data and map_data.get('last_clicked'):
         clicked_lat = map_data['last_clicked']['lat']
         clicked_lng = map_data['last_clicked']['lng']
         
-        # Check duplicate
-        is_new = True
-        for loc in st.session_state.clicked_locations:
-            if abs(loc['lat'] - clicked_lat) < 0.00001 and abs(loc['lng'] - clicked_lng) < 0.00001:
-                is_new = False
-                break
+        # ✅ Create unique identifier for this click
+        click_id = f"{clicked_lat:.6f}_{clicked_lng:.6f}"
         
-        if is_new:
-            with st.spinner("🔍 Getting address..."):
-                address = get_address_from_coordinates(clicked_lat, clicked_lng)
+        # ✅ CHECK: Is this a NEW click (not a duplicate)?
+        if st.session_state.last_processed_click != click_id:
+            # Mark this click as processed BEFORE checking for duplicates in locations
+            st.session_state.last_processed_click = click_id
             
-            new_location = {
-                'name': f'Location {st.session_state.location_counter}',
-                'lat': clicked_lat,
-                'lng': clicked_lng,
-                'address': address,
-                'isStart': False,
-                'type': 'customer'
-            }
-            st.session_state.clicked_locations.append(new_location)
-            st.session_state.location_counter += 1
-            st.success(f"✅ Added: {address}")
-            st.rerun()
+            # Check if this location already exists in our list
+            is_new_location = True
+            for loc in st.session_state.clicked_locations:
+                if abs(loc['lat'] - clicked_lat) < 0.00001 and abs(loc['lng'] - clicked_lng) < 0.00001:
+                    is_new_location = False
+                    st.warning(f"⚠️ Location already exists at {loc['name']}")
+                    break
+            
+            # ✅ Only add and rerun if this is a genuinely new location
+            if is_new_location:
+                with st.spinner("🔍 Getting address..."):
+                    address = get_address_from_coordinates(clicked_lat, clicked_lng)
+                
+                new_location = {
+                    'name': f'Location {st.session_state.location_counter}',
+                    'lat': clicked_lat,
+                    'lng': clicked_lng,
+                    'address': address,
+                    'isStart': False,
+                    'type': 'customer'
+                }
+                st.session_state.clicked_locations.append(new_location)
+                st.session_state.location_counter += 1
+                st.success(f"✅ Added: {address}")
+                
+                # ✅ Update map view for next rerun (preserve current zoom)
+                st.session_state.map_center = {'lat': clicked_lat, 'lng': clicked_lng}
+                # Note: Folium map object doesn't expose zoom, so we keep the current zoom
+                
+                # ✅ SINGLE RERUN - no double rerun
+                st.rerun()
     
     return st.session_state.clicked_locations
