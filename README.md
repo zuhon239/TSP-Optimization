@@ -46,8 +46,7 @@ cd tsp-optimization
 Tạo virtual environment (Python 3.11.9 required)
 python -m venv venv
 source venv/bin/activate # Linux/Mac
-
-venv\Scripts\activate # Windows
+.venv\Scripts\activate # Windows
 Upgrade pip
 pip install --upgrade pip
 ### 3. Install dependencies
@@ -62,26 +61,54 @@ streamlit run app.py
 
 ## 👥 Team Members & Responsibilities
 
-- **Hoàng** (Team Leader): Core algorithms, GA solver, Google Maps API, System architecture
-- **Quang** (Algorithm Specialist): PSO solver, Testing framework, Performance optimization  
-- **Quân** (Frontend Specialist): Streamlit UI, Visualization, Google Maps integration
-- **Nhân** (Data & Documentation): Caching system, Documentation, Integration testing
+- **Hoàng** (Team Leader):  
+✅ Thiết kế kiến trúc tổng thể hệ thống
+✅ Implement Genetic Algorithm (GA) - thuật toán chính 
+✅ Xây dựng TSPSolver base class - nền tảng cho cả GA và PSO 
+✅ Tích hợp toàn bộ hệ thống trong app.py 
+✅ Quản lý configuration, dependencies, documentation
+✅ Code review và merge code của team
+
+- **Quang** (Algorithm Specialist): 
+✅ Implement Particle Swarm Optimization (PSO) - thuật toán thứ 2 
+✅ Xây dựng Algorithm Comparison Framework - so sánh hiệu năng GA vs PSO 
+✅ Phát triển Visualizer module - biểu đồ convergence, performance charts 
+✅ Testing và đánh giá hiệu năng các thuật toán
+✅ Tối ưu hóa parameters cho PSO
+✅ Benchmark và statistical analysis
+
+- **Quân** (UI/UX Developer, Map Visualization Expert):   
+✅ Đồng phát triển GeoUtils với Hoàng - phần visualization 
+✅ Xây dựng Interactive Map UI - Folium integration, click handling 
+✅ Thiết kế giao diện tương tác bản đồ
+✅ Implement location picker, marker management
+✅ Route visualization trên map
+✅ OpenStreetMap integration
+
+- **Nhân** (UI Developer, Results Display Specialist): 
+✅ Đồng phát triển Visualizer với Quang - phần UI display 
+✅ Xây dựng Sidebar Configuration UI - parameter controls 
+✅ Phát triển Results Display Module - charts, tables, metrics 
+✅ Thiết kế data presentation layer
+✅ Integration testing cho UI components
+✅ Export functionality (CSV, JSON)
+
 
 ## 📊 Features
 
 ### Core Algorithms
-- [x] Genetic Algorithm (GA) using DEAP 1.4.3
+- [x] Genetic Algorithm (GA) 
 - [x] Particle Swarm Optimization (PSO)
 - [x] Performance comparison framework
 
 ### UI Features  
-- [x] Interactive Google Maps interface
+- [x] Interactive OpenStreetMaps interface
 - [x] Parameter configuration sidebar
 - [x] Real-time algorithm visualization
 - [x] Results comparison dashboard
 
 ### Data Features
-- [x] Google Distance Matrix API integration
+- [x] OpenStreetMap Distance Matrix API integration
 - [x] Intelligent caching system
 - [x] Export results (CSV, JSON)
 - [x] Test cases management

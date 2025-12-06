@@ -201,7 +201,13 @@ def display_results(
     with col3:
         st.metric("🔄 Iterations", f"{results.get('num_iterations', 0):,}")
     with col4:
-        improvement = results.get('improvement_percentage', 0)
+        initial_dist = results.get('initial_distance', 0)
+        best_dist = results.get('best_distance', 0)
+        if initial_dist > 0:  
+            improvement = ((initial_dist - best_dist) / initial_dist) * 100
+        else:
+            improvement = 0.0
+        
         st.metric("📈 Improvement", f"{improvement:.1f}%")
     st.write("---")
 
@@ -349,7 +355,13 @@ def display_results(
             st.write("**Performance Metrics:**")
             st.write(f"- Iterations: {results.get('num_iterations', 0):,}")
             st.write(f"- Locations: {len(route)}")
-            st.write(f"- Improvement: {results.get('improvement_percentage', 0):.2f}%")
+            initial_dist = results.get('initial_distance', 0)
+            best_dist = results.get('best_distance', 0)
+            if initial_dist > 0:  
+                improvement = ((initial_dist - best_dist) / initial_dist) * 100
+            else:
+                improvement = 0.0       
+            st.write("📈 Improvement", f"{improvement:.1f}%")
 
 
 # =============================================================================
@@ -398,7 +410,7 @@ def display_comparison_results(
     # =========================================================================
     # SECTION A: Algorithm Configuration Comparison
     # =========================================================================
-    st.subheader("⚙️ Section A: Algorithm Configuration")
+    st.subheader("⚙️ Algorithm Configuration")
     
     # Get parameters from top-level or from results
     ga_params = comparison_results.get('ga_params') or ga_results.get('parameters', {})
@@ -408,34 +420,38 @@ def display_comparison_results(
     
     with col1:
         st.write("**🧬 Genetic Algorithm Parameters**")
-        ga_config_data = {
-            'Population Size': ga_params.get('population_size', 'N/A'),
-            'Generations': ga_params.get('generations', 'N/A'),
-            'Crossover Rate': f"{ga_params.get('crossover_probability', 0):.2f}",
-            'Mutation Rate': f"{ga_params.get('mutation_probability', 0):.2f}",
-            'Tournament Size': ga_params.get('tournament_size', 'N/A'),
-            'Elite Size': ga_params.get('elite_size', 'N/A')
-        }
-        st.dataframe(pd.DataFrame(list(ga_config_data.items()), columns=['Parameter', 'Value']), width='stretch')
+        ga_config_data_items = [
+            ('Population Size', str(ga_params.get('population_size', 'N/A'))),
+            ('Generations', str(ga_params.get('generations', 'N/A'))),
+            ('Crossover Rate', str(f"{float(ga_params.get('crossover_probability', 0)):.2f}")),
+            ('Mutation Rate', str(f"{float(ga_params.get('mutation_probability', 0)):.2f}")),
+            ('Tournament Size', str(ga_params.get('tournament_size', 'N/A'))),
+            ('Elite Size', str(ga_params.get('elite_size', 'N/A')))
+        ]
+        ga_config_df = pd.DataFrame(ga_config_data_items, columns=['Parameter', 'Value'])
+        ga_config_df['Value'] = ga_config_df['Value'].astype(str)
+        st.dataframe(ga_config_df, width='stretch')
     
     with col2:
         st.write("**🐝 Particle Swarm Optimization Parameters**")
-        pso_config_data = {
-            'Swarm Size': pso_params.get('swarm_size', 'N/A'),
-            'Max Iterations': pso_params.get('max_iterations', 'N/A'),
-            'Inertia Weight (w)': f"{pso_params.get('w', 0):.3f}",
-            'Cognitive (c1)': f"{pso_params.get('c1', 0):.3f}",
-            'Social (c2)': f"{pso_params.get('c2', 0):.3f}",
-            'w_min': f"{pso_params.get('w_min', 0):.3f}"
-        }
-        st.dataframe(pd.DataFrame(list(pso_config_data.items()), columns=['Parameter', 'Value']), width='stretch')
+        pso_config_data_items = [
+            ('Swarm Size', str(pso_params.get('swarm_size', 'N/A'))),
+            ('Max Iterations', str(pso_params.get('max_iterations', 'N/A'))),
+            ('Inertia Weight (w)', str(f"{float(pso_params.get('w', 0)):.3f}")),
+            ('Cognitive (c1)', str(f"{float(pso_params.get('c1', 0)):.3f}")),
+            ('Social (c2)', str(f"{float(pso_params.get('c2', 0)):.3f}")),
+            ('w_min', str(f"{float(pso_params.get('w_min', 0)):.3f}"))
+        ]
+        pso_config_df = pd.DataFrame(pso_config_data_items, columns=['Parameter', 'Value'])
+        pso_config_df['Value'] = pso_config_df['Value'].astype(str)
+        st.dataframe(pso_config_df, width='stretch')
     
     st.write("---")
     
     # =========================================================================
     # SECTION B: Performance Metrics Comparison
     # =========================================================================
-    st.subheader("📊 Section B: Performance Metrics")
+    st.subheader("📊 Performance Metrics")
     
     # Always display metrics - no conditional
     # Metric cards with winner indicators
@@ -467,8 +483,15 @@ def display_comparison_results(
     
     # Improvement Percentage
     with col3:
-        ga_imp = ga_results.get('improvement_percentage', 0)
-        pso_imp = pso_results.get('improvement_percentage', 0)
+        # Calculate improvement from initial and best distance
+        ga_initial = ga_results.get('initial_distance', 0)
+        ga_best = ga_results.get('best_distance', 0)
+        ga_imp = ((ga_initial - ga_best) / ga_initial * 100) if ga_initial > 0 else 0
+        
+        pso_initial = pso_results.get('initial_distance', 0)
+        pso_best = pso_results.get('best_distance', 0)
+        pso_imp = ((pso_initial - pso_best) / pso_initial * 100) if pso_initial > 0 else 0
+        
         winner = "🏆 GA" if ga_imp > pso_imp else "🏆 PSO"
         st.metric(
             "Improvement (%)",
@@ -492,7 +515,7 @@ def display_comparison_results(
     # =========================================================================
     # SECTION C: Convergence Chart
     # =========================================================================
-    st.subheader("📈 Section C: Convergence Comparison")
+    st.subheader("📈 Convergence Comparison")
     
     ga_convergence = ga_results.get('convergence_data', {})
     pso_convergence = pso_results.get('convergence_data', {})
@@ -545,7 +568,7 @@ def display_comparison_results(
     # =========================================================================
     # SECTION D: Route Quality Comparison
     # =========================================================================
-    st.subheader("🛣️ Section D: Route Quality Comparison")
+    st.subheader("🛣️ Route Quality Comparison")
     
     col1, col2 = st.columns(2)
     
@@ -568,11 +591,349 @@ def display_comparison_results(
         st.metric("Distance", f"{pso_results.get('best_distance', 0):.2f} km")
     
     st.write("---")
+    # =========================================================================
+    # SECTION D.2: SIDE-BY-SIDE MAP COMPARISON - WITH ANIMATION & NUMBERING
+    # =========================================================================
+    st.subheader("🗺️ Visual Route Comparison")
+
+    if locations and ga_route and pso_route:
+        try:
+            import folium
+            from folium.plugins import AntPath
+            from streamlit_folium import st_folium
+            
+            # Get OpenRouteService API key
+            openroute_key = os.getenv('OPENROUTE_API_KEY')
+            
+            # =====================================================================
+            # CACHE KEY - Unique per route comparison
+            # =====================================================================
+            ga_route_key = "_".join(map(str, ga_route))
+            pso_route_key = "_".join(map(str, pso_route))
+            cache_key_ga = f"comparison_ga_{ga_route_key}"
+            cache_key_pso = f"comparison_pso_{pso_route_key}"
+            
+            # =====================================================================
+            # FETCH REAL ROAD COORDINATES (WITH CACHING)
+            # =====================================================================
+            ga_real_coords = None
+            pso_real_coords = None
+            
+            # Check if already cached
+            if cache_key_ga in st.session_state:
+                ga_real_coords = st.session_state[cache_key_ga]
+            
+            if cache_key_pso in st.session_state:
+                pso_real_coords = st.session_state[cache_key_pso]
+            
+            # Only fetch if not cached
+            if openroute_key and (ga_real_coords is None or pso_real_coords is None):
+                with st.spinner("🛣️ Fetching real road routes..."):
+                    # GA route (if not cached)
+                    if ga_real_coords is None:
+                        try:
+                            ga_coords_api = [[locations[i]['lng'], locations[i]['lat']] for i in ga_route]
+                            ga_coords_api.append(ga_coords_api[0])
+                            ga_directions = get_openroute_directions(ga_coords_api, openroute_key)
+                            
+                            if ga_directions and ga_directions.get('features'):
+                                geometry = ga_directions['features'][0]['geometry']
+                                if geometry['type'] == 'LineString':
+                                    ga_real_coords = [[c[1], c[0]] for c in geometry['coordinates']]
+                                    st.session_state[cache_key_ga] = ga_real_coords  # ✅ CACHE IT
+                        except Exception as e:
+                            st.session_state[cache_key_ga] = None  # Cache failure
+                    
+                    # PSO route (if not cached)
+                    if pso_real_coords is None:
+                        try:
+                            pso_coords_api = [[locations[i]['lng'], locations[i]['lat']] for i in pso_route]
+                            pso_coords_api.append(pso_coords_api[0])
+                            pso_directions = get_openroute_directions(pso_coords_api, openroute_key)
+                            
+                            if pso_directions and pso_directions.get('features'):
+                                geometry = pso_directions['features'][0]['geometry']
+                                if geometry['type'] == 'LineString':
+                                    pso_real_coords = [[c[1], c[0]] for c in geometry['coordinates']]
+                                    st.session_state[cache_key_pso] = pso_real_coords  
+                        except Exception as e:
+                            st.session_state[cache_key_pso] = None  # Cache failure
+            
+            # Calculate center
+            lats = [locations[i]['lat'] for i in ga_route]
+            lngs = [locations[i]['lng'] for i in ga_route]
+            center_lat = sum(lats) / len(lats)
+            center_lng = sum(lngs) / len(lngs)
+            
+            col1, col2 = st.columns(2)
+            
+            # =====================================================================
+            # GA MAP 
+            # =====================================================================
+            with col1:
+                st.write("**🧬 Genetic Algorithm Route**")
+                
+                ga_map = folium.Map(
+                    location=[center_lat, center_lng],
+                    zoom_start=12,
+                    tiles='OpenStreetMap',
+                    control_scale=True
+                )
+                
+                # DRAW ANIMATED ROUTE
+                if ga_real_coords:
+                    AntPath(
+                        locations=ga_real_coords,
+                        color='#1976d2',
+                        weight=6,
+                        opacity=0.8,
+                        delay=800,
+                        dash_array=[10, 20],
+                        pulse_color='#ff6b6b'
+                    ).add_to(ga_map)
+                else:
+                    # Fallback: straight lines with animation
+                    route_coords = [[locations[i]['lat'], locations[i]['lng']] for i in ga_route]
+                    route_coords.append(route_coords[0])
+                    AntPath(
+                        locations=route_coords,
+                        color='#1976d2',
+                        weight=5,
+                        opacity=0.7,
+                        delay=1000,
+                        dash_array=[15, 25],
+                        pulse_color='#ff6b6b'
+                    ).add_to(ga_map)
+                
+                # ✅ ADD NUMBERED MARKERS
+                for route_order, loc_idx in enumerate(ga_route):
+                    loc = locations[loc_idx]
+                    is_start = route_order == 0
+                    
+                    if is_start:
+                        icon_html = f'''
+                            <div style="
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                width: 35px;
+                                height: 35px;
+                                background-color: #ef5350;
+                                border: 3px solid white;
+                                border-radius: 50%;
+                                font-weight: bold;
+                                font-size: 16px;
+                                color: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            ">🏠</div>
+                        '''
+                    else:
+                        icon_html = f'''
+                            <div style="
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                width: 30px;
+                                height: 30px;
+                                background-color: #1976d2;
+                                border: 3px solid white;
+                                border-radius: 50%;
+                                font-weight: bold;
+                                font-size: 14px;
+                                color: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            ">{route_order}</div>
+                        '''
+                    
+                    popup_html = f"""
+                    <div style="min-width: 200px; font-family: Arial;">
+                        <h4 style="margin: 0 0 10px 0; color: #1976d2;">
+                            {'🏠 Depot' if is_start else f'📦 Stop {route_order}'}
+                        </h4>
+                        <p><b>📍</b> {loc['name']}</p>
+                        <p><b>🔢 Order:</b> {route_order} / {len(ga_route)-1}</p>
+                    </div>
+                    """
+                    
+                    folium.Marker(
+                        location=[loc['lat'], loc['lng']],
+                        popup=folium.Popup(popup_html, max_width=250),
+                        tooltip=f"{'🏠 ' if is_start else ''}{loc['name']} ({route_order})",
+                        icon=folium.DivIcon(html=icon_html)
+                    ).add_to(ga_map)
+                
+                st_folium(ga_map, width=400, height=450, key="ga_comp_map")
+                
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.metric("📏 Distance", f"{ga_results.get('best_distance', 0):.2f} km")
+                with col_b:
+                    st.metric("📦 Stops", len(ga_route) - 1)
+            
+            # =====================================================================
+            # PSO MAP 
+            # =====================================================================
+            with col2:
+                st.write("**🐝 Particle Swarm Optimization Route**")
+                
+                pso_map = folium.Map(
+                    location=[center_lat, center_lng],
+                    zoom_start=12,
+                    tiles='OpenStreetMap',
+                    control_scale=True
+                )
+                
+                # ✅ DRAW ANIMATED ROUTE
+                if pso_real_coords:
+                    AntPath(
+                        locations=pso_real_coords,
+                        color='#ff7f0e',
+                        weight=6,
+                        opacity=0.8,
+                        delay=800,
+                        dash_array=[10, 20],
+                        pulse_color='#66ff66'
+                    ).add_to(pso_map)
+                else:
+                    # Fallback: straight lines with animation
+                    route_coords = [[locations[i]['lat'], locations[i]['lng']] for i in pso_route]
+                    route_coords.append(route_coords[0])
+                    AntPath(
+                        locations=route_coords,
+                        color='#ff7f0e',
+                        weight=5,
+                        opacity=0.7,
+                        delay=1000,
+                        dash_array=[15, 25],
+                        pulse_color='#66ff66'
+                    ).add_to(pso_map)
+                
+                # ✅ ADD NUMBERED MARKERS
+                for route_order, loc_idx in enumerate(pso_route):
+                    loc = locations[loc_idx]
+                    is_start = route_order == 0
+                    
+                    if is_start:
+                        icon_html = f'''
+                            <div style="
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                width: 35px;
+                                height: 35px;
+                                background-color: #ef5350;
+                                border: 3px solid white;
+                                border-radius: 50%;
+                                font-weight: bold;
+                                font-size: 16px;
+                                color: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            ">🏠</div>
+                        '''
+                    else:
+                        icon_html = f'''
+                            <div style="
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                                width: 30px;
+                                height: 30px;
+                                background-color: #ff7f0e;
+                                border: 3px solid white;
+                                border-radius: 50%;
+                                font-weight: bold;
+                                font-size: 14px;
+                                color: white;
+                                box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                            ">{route_order}</div>
+                        '''
+                    
+                    popup_html = f"""
+                    <div style="min-width: 200px; font-family: Arial;">
+                        <h4 style="margin: 0 0 10px 0; color: #ff7f0e;">
+                            {'🏠 Depot' if is_start else f'📦 Stop {route_order}'}
+                        </h4>
+                        <p><b>📍</b> {loc['name']}</p>
+                        <p><b>🔢 Order:</b> {route_order} / {len(pso_route)-1}</p>
+                    </div>
+                    """
+                    
+                    folium.Marker(
+                        location=[loc['lat'], loc['lng']],
+                        popup=folium.Popup(popup_html, max_width=250),
+                        tooltip=f"{'🏠 ' if is_start else ''}{loc['name']} ({route_order})",
+                        icon=folium.DivIcon(html=icon_html)
+                    ).add_to(pso_map)
+                
+                st_folium(pso_map, width=400, height=450, key="pso_comp_map")
+                
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.metric("📏 Distance", f"{pso_results.get('best_distance', 0):.2f} km")
+                with col_b:
+                    st.metric("📦 Stops", len(pso_route) - 1)
+            
+            # =====================================================================
+            # ROUTE DIFFERENCES ANALYSIS 
+            # =====================================================================
+            st.write("")
+            st.write("**📊 Route Comparison Analysis:**")
+            
+            if ga_route == pso_route:
+                st.success("✅ Both algorithms found the **exact same route**!")
+            else:
+                # Compare routes by checking common edges (segments)
+                # Use sets to handle routes that visit same cities but in different order
+                
+                def get_edges(route):
+                    """Convert route to set of undirected edges (segments)"""
+                    edges = set()
+                    for i in range(len(route) - 1):
+                        # Store as sorted tuple to ignore direction
+                        edge = tuple(sorted([route[i], route[i+1]]))
+                        edges.add(edge)
+                    return edges
+                
+                ga_edges = get_edges(ga_route)
+                pso_edges = get_edges(pso_route)
+                
+                # Common edges are those that appear in both routes
+                common_edges = ga_edges.intersection(pso_edges)
+                same_segments = len(common_edges)
+                
+                # Total possible edges (using GA route length as reference)
+                total_segments = len(ga_route) - 1
+                different_segments = total_segments - same_segments
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("🔄 Different Segments", f"{different_segments}/{total_segments}")
+                with col2:
+                    similarity = (same_segments / total_segments * 100) if total_segments > 0 else 0
+                    st.metric("📊 Route Similarity", f"{similarity:.1f}%")
+                with col3:
+                    distance_diff = abs(ga_results.get('best_distance', 0) - pso_results.get('best_distance', 0))
+                    st.metric("📏 Distance Gap", f"{distance_diff:.2f} km")
+            
+        except ImportError as e:
+            st.error(f"❌ Required library not installed: {str(e)}")
+            st.info("Run: `pip install folium streamlit-folium`")
+        except Exception as e:
+            st.error(f"❌ Failed to render comparison maps: {str(e)}")
+            with st.expander("🐛 Debug Info"):
+                import traceback
+                st.code(traceback.format_exc())
+    else:
+        st.info("📍 Location data or routes not available for map comparison")
+
+    st.write("---")
+
     
     # =========================================================================
     # SECTION E: Statistical Summary Table
     # =========================================================================
-    st.subheader("📋 Section E: Detailed Statistical Summary")
+    st.subheader("📋 Detailed Statistical Summary")
     
     # Build summary data
     summary_data = {
@@ -589,34 +950,32 @@ def display_comparison_results(
             'Success'
         ],
         'Genetic Algorithm': [
-            'GA',
-            f"{ga_results.get('best_distance', 0):.2f}",
-            f"{ga_convergence.get('best_distances', [0])[0]:.2f}" if ga_convergence.get('best_distances') else 'N/A',
-            f"{ga_results.get('best_distance', 0):.2f}",  # For single run
-            f"{ga_results.get('best_distance', 0):.2f}",
-            f"{ga_results.get('std_distance', 0):.2f}" if 'std_distance' in ga_results else 'N/A',
-            f"{ga_results.get('runtime_seconds', 0):.4f}",
-            f"{ga_results.get('num_iterations', 0)}",
-            f"{comparison.get('ga_improvement_pct', 0):.1f}%" if comparison else 'N/A',
-            "✅ Yes" if ga_success else "❌ No"
+            str('GA'),
+            str(f"{ga_results.get('best_distance', 0):.2f}"),
+            str(f"{ga_convergence.get('best_distances', [0])[0]:.2f}" if ga_convergence.get('best_distances') else 'N/A'),
+            str(f"{max(ga_convergence.get('best_distances', [0])):.2f}" if ga_convergence.get('best_distances') else 'N/A'),
+            str(f"{np.mean(ga_convergence.get('best_distances', [0])):.2f}" if ga_convergence.get('best_distances') else 'N/A'),
+            str(f"{np.std(ga_convergence.get('best_distances', [0])):.2f}" if ga_convergence.get('best_distances') and len(ga_convergence.get('best_distances', [])) > 1 else 'N/A'),
+            str(f"{ga_results.get('runtime_seconds', 0):.4f}"),
+            str(f"{ga_results.get('num_iterations', 0)}"),
+            str(f"{comparison.get('ga_improvement_pct', 0):.1f}%" if comparison else 'N/A'),
+            str("✅ Yes" if ga_success else "❌ No")
         ],
         'Particle Swarm Optimization': [
-            'PSO',
-            f"{pso_results.get('best_distance', 0):.2f}",
-            f"{pso_convergence.get('best_distances', [0])[0]:.2f}" if pso_convergence.get('best_distances') else 'N/A',
-            f"{pso_results.get('best_distance', 0):.2f}",
-            f"{pso_results.get('best_distance', 0):.2f}",
-            f"{pso_results.get('std_distance', 0):.2f}" if 'std_distance' in pso_results else 'N/A',
-            f"{pso_results.get('runtime_seconds', 0):.4f}",
-            f"{pso_results.get('num_iterations', 0)}",
-            f"{comparison.get('pso_improvement_pct', 0):.1f}%" if comparison else 'N/A',
-            "✅ Yes" if pso_success else "❌ No"
+            str('PSO'),
+            str(f"{pso_results.get('best_distance', 0):.2f}"),
+            str(f"{pso_convergence.get('best_distances', [0])[0]:.2f}" if pso_convergence.get('best_distances') else 'N/A'),
+            str(f"{max(pso_convergence.get('best_distances', [0])):.2f}" if pso_convergence.get('best_distances') else 'N/A'),
+            str(f"{np.mean(pso_convergence.get('best_distances', [0])):.2f}" if pso_convergence.get('best_distances') else 'N/A'),
+            str(f"{np.std(pso_convergence.get('best_distances', [0])):.2f}" if pso_convergence.get('best_distances') and len(pso_convergence.get('best_distances', [])) > 1 else 'N/A'),
+            str(f"{pso_results.get('runtime_seconds', 0):.4f}"),
+            str(f"{pso_results.get('num_iterations', 0)}"),
+            str(f"{comparison.get('pso_improvement_pct', 0):.1f}%" if comparison else 'N/A'),
+            str("✅ Yes" if pso_success else "❌ No")
         ]
     }
     
     summary_df = pd.DataFrame(summary_data)
-    # Convert all columns to string to avoid PyArrow conversion issues
-    summary_df = summary_df.astype(str)
     st.dataframe(summary_df, width='stretch', use_container_width=True)
     
     st.write("---")
