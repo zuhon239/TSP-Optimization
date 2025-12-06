@@ -20,9 +20,9 @@ Giải bài toán **Travelling Salesman Problem (TSP)** bằng **Genetic Algorit
 ## 🛠️ Tech Stack
 
 - **Python**: 3.11.9
-- **Algorithms**: DEAP 1.4.3 (GA), Custom PSO
+- **Algorithms**: GA, PSO
 - **Frontend**: Streamlit 1.28+
-- **Maps**: Google Maps API
+- **Maps**: Folium + OpenStreetMap
 - **Data**: NumPy, Pandas
 - **Visualization**: Matplotlib, Plotly, Seaborn
 
@@ -54,8 +54,8 @@ pip install -r requirements.txt
 ### 4. Setup environment
 Copy environment template
 cp .env.example .env
-Edit .env file - add your Google Maps API key
-GOOGLE_MAPS_API_KEY=your_api_key_here
+Edit .env file - add your OpenStreetRoute key
+OPENROUTE_API_KEY=Y=your_api_key_here
 ### 5. Run application
 streamlit run app.py
 

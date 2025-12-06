@@ -10,18 +10,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # =====================================
-# Google Maps API Configuration
+# Routing Service Configuration
 # =====================================
-GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
-# Add OpenRouteService API key
-
+# OpenRouteService API for real road routing (FREE 2000 requests/day)
 OPENROUTE_API_KEY = os.getenv('OPENROUTE_API_KEY', '')
-if not GOOGLE_MAPS_API_KEY:
-    print("⚠️  Warning: GOOGLE_MAPS_API_KEY not found in environment variables")
-    print("   Please add your API key to .env file")
 
-# Google Maps settings
-GOOGLE_MAPS_REGION = 'VN'  # Vietnam
+# Default map settings
 DEFAULT_CENTER = {'lat': 10.762622, 'lng': 106.660172}  # Ho Chi Minh City
 DEFAULT_ZOOM = 13
 
@@ -98,7 +92,7 @@ PERFORMANCE_CONFIG = {
 def print_config():
     """Print current configuration for debugging"""
     print("🔧 TSP Optimizer Configuration:")
-    print(f"   Google Maps API: {'✅ Configured' if GOOGLE_MAPS_API_KEY else '❌ Missing'}")
+    print(f"   OpenRouteService: {'✅ Configured' if OPENROUTE_API_KEY else '⚠️ Optional'}")
     print(f"   GA Population: {GA_DEFAULT_CONFIG['population_size']}")
     print(f"   PSO Swarm Size: {PSO_DEFAULT_CONFIG['swarm_size']}")
     print(f"   Cache Directory: {CACHE_DIR}")

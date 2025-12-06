@@ -1,19 +1,15 @@
 """
 Geospatial Utilities for TSP Optimization
-OpenRouteService for real road distances + Google APIs for UI
-Enhanced with intelligent fallback system
+OpenRouteService for real road distances + Enhanced Haversine fallback
 
 Architecture:
-🗺️ OpenRouteService API: Interactive map, search UI ✅
-📍 Google Geocoding API: Address ↔ Coordinates ✅  
-🔍 Google Places API: Autocomplete search ✅
-🛣️ OpenRouteService API: Distance Matrix (FREE 2000/day) 🆕
-📐 Enhanced Haversine: Final fallback ✅
+🗺️ Folium/OpenStreetMap: Interactive map display ✅
+🛣️ OpenRouteService API: Distance Matrix (FREE 2000/day) ✅
+📐 Enhanced Haversine: Intelligent fallback with road factors ✅
 
-Author:Nhân
+Author: Nhân
 """
 
-import googlemaps
 import numpy as np
 import json
 import hashlib
@@ -35,36 +31,19 @@ class GeoUtils:
     
     Features:
     - OpenRouteService: Real road distances (FREE 2000 requests/day)
-    - Google APIs: Geocoding, Places, Maps UI (FREE tier)
     - Enhanced Haversine: Intelligent fallback with road factors
     - Advanced caching: Persistent storage with TTL
     - Rate limiting: Respectful API usage
     - Error handling: Robust fallback system
     """
     
-    def __init__(self, google_api_key: str = None, openroute_api_key: str = None):
+    def __init__(self, openroute_api_key: str = None):
         """
         Initialize geo utilities with API keys
         
         Args:
-            google_api_key: Google Maps API key (for geocoding, UI)
             openroute_api_key: OpenRouteService API key (for distance matrix)
         """
-        # Google Maps setup (for geocoding, UI)
-        self.google_api_key = google_api_key or getattr(config, 'GOOGLE_MAPS_API_KEY', '')
-        
-        if self.google_api_key:
-            try:
-                self.gmaps = googlemaps.Client(key=self.google_api_key)
-                self.google_available = True
-                logging.info("✅ Google Maps API: Geocoding, Places, Maps UI")
-            except Exception as e:
-                self.gmaps = None
-                self.google_available = False
-                logging.warning(f"⚠️ Google Maps unavailable: {e}")
-        else:
-            self.gmaps = None
-            self.google_available = False
         
         # OpenRouteService setup (for distance matrix)
         self.openroute_api_key = openroute_api_key or getattr(config, 'OPENROUTE_API_KEY', '')
@@ -98,7 +77,6 @@ class GeoUtils:
         
         # Statistics tracking
         self.stats = {
-            'google_geocode': 0,
             'openroute_distance_matrix': 0,
             'enhanced_haversine': 0,
             'cache_hits': 0,
@@ -106,78 +84,7 @@ class GeoUtils:
             'api_errors': 0
         }
         
-        self.logger.info("🌍 GeoUtils initialized - OpenRouteService + Google hybrid")
-    
-    # ==========================================
-    # GOOGLE GEOCODING (UNCHANGED)
-    # ==========================================
-    
-    def geocode_address(self, address: str, country_code: str = 'vn') -> Optional[Tuple[float, float]]:
-        """
-        Convert address to coordinates using Google Geocoding API
-        🔍 Perfect cho search địa chỉ Việt Nam
-        
-        Args:
-            address: Address string (e.g., "Bệnh viện Chợ Rẫy, TP.HCM")
-            country_code: Country bias for better results
-            
-        Returns:
-            (latitude, longitude) or None
-        """
-        if not self.google_available:
-            self.logger.warning("❌ Google Geocoding not available")
-            return None
-            
-        try:
-            self.stats['google_geocode'] += 1
-            
-            geocode_result = self.gmaps.geocode(
-                address, 
-                components={'country': country_code}
-            )
-            
-            if geocode_result:
-                location = geocode_result[0]['geometry']['location']
-                lat, lng = location['lat'], location['lng']
-                
-                self.logger.info(f"🔍 Geocoded '{address}' → ({lat:.6f}, {lng:.6f})")
-                return (lat, lng)
-            else:
-                self.logger.warning(f"❌ No geocoding results for '{address}'")
-                return None
-                
-        except Exception as e:
-            self.logger.error(f"❌ Geocoding failed for '{address}': {str(e)}")
-            self.stats['api_errors'] += 1
-            return None
-    
-    def reverse_geocode(self, lat: float, lng: float) -> Optional[str]:
-        """
-        Convert coordinates to address using Google Reverse Geocoding
-        📍 Perfect cho hiển thị địa chỉ khi user click map
-        """
-        if not self.google_available:
-            return None
-            
-        try:
-            self.stats['google_geocode'] += 1
-            
-            result = self.gmaps.reverse_geocode(
-                (lat, lng),
-                language='vi'  # Vietnamese language
-            )
-            
-            if result:
-                address = result[0]['formatted_address']
-                self.logger.debug(f"📍 Reverse geocoded ({lat}, {lng}) → '{address}'")
-                return address
-            
-            return None
-            
-        except Exception as e:
-            self.logger.error(f"❌ Reverse geocoding failed: {str(e)}")
-            self.stats['api_errors'] += 1
-            return None
+        self.logger.info("🌍 GeoUtils initialized - OpenRouteService + Enhanced Haversine")
     
     # ==========================================
     # CACHING SYSTEM
@@ -545,7 +452,6 @@ class GeoUtils:
         
         return {
             'api_availability': {
-                'google_geocoding': self.google_available,
                 'openroute_distance_matrix': self.openroute_available,
                 'enhanced_haversine': True  # Always available
             },
@@ -612,39 +518,29 @@ class GeoUtils:
             except Exception:
                 results['openroute'] = False
         
-        # Test Google Geocoding
-        if self.google_available:
-            try:
-                coords = self.geocode_address("Chợ Bến Thành, TP.HCM")
-                results['google_geocoding'] = coords is not None
-            except Exception:
-                results['google_geocoding'] = False
-        
         return results
     
     def __str__(self) -> str:
         """String representation"""
         ors_status = "✅" if self.openroute_available else "❌"
-        google_status = "✅" if self.google_available else "❌"
-        return f"GeoUtils(OpenRouteService: {ors_status}, Google: {google_status})"
+        return f"GeoUtils(OpenRouteService: {ors_status}, Enhanced Haversine: ✅)"
     
 
 # ==========================================
 # FACTORY FUNCTIONS
 # ==========================================
 
-def create_geo_utils(google_api_key: str = None, openroute_api_key: str = None) -> GeoUtils:
+def create_geo_utils(openroute_api_key: str = None) -> GeoUtils:
     """
     Factory function to create GeoUtils instance
     
     Args:
-        google_api_key: Google Maps API key (for geocoding, UI)
         openroute_api_key: OpenRouteService API key (for distance matrix)
         
     Returns:
-        GeoUtils instance with OpenRouteService + Google hybrid
+        GeoUtils instance with OpenRouteService + Enhanced Haversine fallback
     """
-    return GeoUtils(google_api_key, openroute_api_key)
+    return GeoUtils(openroute_api_key)
 def process_realtime_location(self, lat: float, lng: float, name: str = None) -> Dict:
     """
     Process a new location added from the map in real-time
