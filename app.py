@@ -1024,19 +1024,7 @@ def main():
                             status_text.text("✅ Optimization completed!")
                             
                             st.success("✅ Optimization completed successfully!")
-                            
-                            # Quick results preview
-                            col1, col2, col3, col4 = st.columns(4)
-                            with col1:
-                                st.metric("🏆 Best Distance", f"{results.get('best_distance', 0):.2f} km")
-                            with col2:
-                                st.metric("⏱️ Runtime", f"{results.get('runtime_seconds', 0):.2f}s")
-                            with col3:
-                                st.metric("🔄 Iterations", f"{results.get('num_iterations', 0):,}")
-                            with col4:
-                                improvement = ((results.get('initial_distance', 0) - results.get('best_distance', 0)) / results.get('initial_distance', 1)) * 100
-                                st.metric("📈 Improvement", f"{improvement:.1f}%")
-                            
+                                                   
                             st.balloons()
                             
                             time.sleep(1)
