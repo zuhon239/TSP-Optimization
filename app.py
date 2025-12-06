@@ -286,6 +286,13 @@ if 'last_map_center' not in st.session_state:
 if 'last_map_zoom' not in st.session_state:
     st.session_state.last_map_zoom = None
 
+# ✅ Track which result type is currently displayed
+if 'active_result_type' not in st.session_state:
+    st.session_state.active_result_type = None  # 'ga', 'pso', 'comparison', or None
+
+if 'last_algorithm_mode' not in st.session_state:
+    st.session_state.last_algorithm_mode = None  # Track mode for change detection
+
 # =============================================================================
 # 5. HELPER FUNCTIONS
 # =============================================================================
@@ -670,6 +677,13 @@ def main():
             if st.button("🔄 Calculate Distances", type="primary", use_container_width=True,
                         disabled=not validation['valid']):
                 try:
+                    # ✅ CLEAR ALL RESULTS when recalculating distances
+                    st.session_state.optimization_results = None
+                    st.session_state.comparison_results = None
+                    st.session_state.active_result_type = None
+                    st.session_state.optimized_route = None
+                    st.session_state.route_coords = None
+                    
                     with st.spinner("🛣️ Calculating road distances..."):
                         # ✅ FIND DEPOT INDEX
                         depot_idx = next((i for i, loc in enumerate(st.session_state.clicked_locations) 
@@ -754,6 +768,32 @@ def main():
                 horizontal=True,
                 help="GA = Evolution-based | PSO = Swarm-based | Compare = Run both algorithms"
             )
+            
+            # ✅ DETECT MODE CHANGE AND CLEAR MISMATCHED RESULTS
+            if st.session_state.last_algorithm_mode != algorithm_mode:
+                # Algorithm mode changed - clear old results
+                if algorithm_mode == "🧬 Genetic Algorithm (GA)":
+                    # Switching to GA - clear PSO and comparison results
+                    if st.session_state.active_result_type in ['pso', 'comparison']:
+                        st.session_state.optimization_results = None
+                        st.session_state.comparison_results = None
+                        st.session_state.active_result_type = None
+                
+                elif algorithm_mode == "🐝 Particle Swarm Optimization (PSO)":
+                    # Switching to PSO - clear GA and comparison results
+                    if st.session_state.active_result_type in ['ga', 'comparison']:
+                        st.session_state.optimization_results = None
+                        st.session_state.comparison_results = None
+                        st.session_state.active_result_type = None
+                
+                else:  # "🔬 Compare Both"
+                    # Switching to Compare - clear single algorithm results
+                    if st.session_state.active_result_type in ['ga', 'pso']:
+                        st.session_state.optimization_results = None
+                        st.session_state.active_result_type = None
+                
+                # Update last mode
+                st.session_state.last_algorithm_mode = algorithm_mode
             
             st.write("")
             
@@ -968,6 +1008,8 @@ def main():
                                     'pso_params': pso_params,
                                     'comparison': comparison_data
                                 }
+                                # ✅ MARK THIS AS COMPARISON RESULT
+                                st.session_state.active_result_type = 'comparison'
                                 
                                 progress_bar.progress(1.0)
                                 status_text.text("✅ Comparison completed!")
@@ -988,19 +1030,24 @@ def main():
                                 status_text.text("🧬 Evolving population...")
                                 progress_bar.progress(0.4)
                                 results = run_genetic_algorithm(st.session_state.distance_matrix, config_params)
+                            # ✅ WILL MARK AS GA RESULT BELOW
                         else:
                             algorithm_name = "Particle Swarm Optimization"
                             with st.spinner(f"🐝 Running {algorithm_name}..."):
                                 status_text.text("🐝 Optimizing swarm...")
                                 progress_bar.progress(0.4)
                                 results = run_pso_algorithm(st.session_state.distance_matrix, config_params)
-                        
-                        status_text.text("📊 Processing results...")
+                            # ✅ WILL MARK AS PSO RESULT BELOW                        status_text.text("📊 Processing results...")
                         progress_bar.progress(0.7)
                         
                         if results and results.get('success'):
                             st.session_state.optimized_route = results['best_route']
                             st.session_state.optimization_results = results
+                            # ✅ MARK THIS AS GA RESULT
+                            if "GA" in algorithm_mode:
+                                st.session_state.active_result_type = 'ga'
+                            else:
+                                st.session_state.active_result_type = 'pso'
                             
                             # Get real road coordinates
                             status_text.text("🗺️ Generating route path...")
@@ -1053,9 +1100,10 @@ def main():
                         st.write("- Distance matrix has issues")
                         st.write("- Insufficient locations for optimization")    
     # =========================================================================
-    # SECTION 5: RESULTS DISPLAY
+    # SECTION 5: RESULTS DISPLAY (SINGLE ALGORITHM - GA or PSO)
     # =========================================================================
-    if st.session_state.optimization_results and display_results:
+    # ✅ Only display single algorithm results if active_result_type is 'ga' or 'pso'
+    if st.session_state.optimization_results and display_results and st.session_state.active_result_type in ['ga', 'pso']:
         st.write("---")
         st.subheader("📊 Optimization Results")
         
@@ -1084,7 +1132,8 @@ def main():
     # =========================================================================
     # SECTION 6: ALGORITHM COMPARISON RESULTS
     # =========================================================================
-    if st.session_state.comparison_results:
+    # ✅ Only display comparison results if active_result_type is 'comparison'
+    if st.session_state.comparison_results and st.session_state.active_result_type == 'comparison':
         st.write("---")
         st.subheader("🔬 Algorithm Comparison Results")
         

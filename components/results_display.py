@@ -208,7 +208,25 @@ def display_results(
         else:
             improvement = 0.0
         
-        st.metric("📈 Improvement", f"{improvement:.1f}%")
+        st.metric(
+            "📈 Improvement",
+            f"{improvement:.1f}%",
+            help=(
+                "**📍 Initial Distance:**\n"
+                "Total distance of the FIRST random route tried by the algorithm. "
+                "This is the baseline starting point before any optimization.\n\n"
+                "**🎯 Best Distance Found:**\n"
+                "Total distance of the BEST route discovered after running the optimization algorithm. "
+                "This is the optimized result after all iterations/generations.\n\n"
+                "**📊 Calculation Formula:**\n"
+                "((Initial - Best) / Initial) × 100\n\n"
+                f"**💾 Results:**\n"
+                f"• Initial: {initial_dist:.2f} km\n"
+                f"• Best: {best_dist:.2f} km\n"
+                f"• Saved: {initial_dist - best_dist:.2f} km\n"
+                f"• Improvement: {improvement:.1f}%"
+            )
+        )
     st.write("---")
 
     # ✅ EXTRACT ROUTE FIRST (BEFORE USING IT)
@@ -494,7 +512,7 @@ def display_comparison_results(
         
         winner = "🏆 GA" if ga_imp > pso_imp else "🏆 PSO"
         st.metric(
-            "Improvement (%)",
+            "Improvement (%)",            
             f"{max(ga_imp, pso_imp):.1f}%",
             delta=f"{winner}"
         )
@@ -911,7 +929,31 @@ def display_comparison_results(
                     st.metric("🔄 Different Segments", f"{different_segments}/{total_segments}")
                 with col2:
                     similarity = (same_segments / total_segments * 100) if total_segments > 0 else 0
-                    st.metric("📊 Route Similarity", f"{similarity:.1f}%")
+                    st.metric(
+                        "📊 Route Similarity",
+                        f"{similarity:.1f}%",
+                        help=(
+                            "**🔍 What is measured:**\n"
+                            "Compares the delivery segments (edges) between GA and PSO routes. "
+                            "A segment is a direct trip from one location to another.\n\n"
+                            "**📍 How it's calculated:**\n"
+                            "1. Extract all delivery segments from GA route\n"
+                            "2. Extract all delivery segments from PSO route\n"
+                            "3. Count how many segments are identical (regardless of direction)\n"
+                            "4. Calculate percentage: (Common Segments / Total Segments) × 100\n\n"
+                            "**💡 What it means:**\n"
+                            "• **100%:** Both algorithms chose identical delivery segments → Same route!\n"
+                            "• **50%:** Half the segments match → Different route strategies\n"
+                            "• **0%:** No common segments → Completely different routes\n\n"
+                            "**📊 Example:**\n"
+                            f"• Common segments: {same_segments}/{total_segments}\n"
+                            f"• Different segments: {different_segments}/{total_segments}\n"
+                            f"• Similarity: {similarity:.1f}%\n\n"
+                            "**🎯 Interpretation:**\n"
+                            "High similarity suggests algorithms converged to similar solutions. "
+                            "Low similarity shows different optimization strategies but both may be optimal."
+                        )
+                    )
                 with col3:
                     distance_diff = abs(ga_results.get('best_distance', 0) - pso_results.get('best_distance', 0))
                     st.metric("📏 Distance Gap", f"{distance_diff:.2f} km")
