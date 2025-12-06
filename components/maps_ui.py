@@ -54,6 +54,56 @@ def get_address_from_coordinates(lat: float, lng: float) -> str:
         return f"{lat:.6f}, {lng:.6f}"
 
 
+def calculate_optimal_view(locations: List[Dict]) -> tuple:
+    """
+    ✅ Calculate optimal map center and zoom to show all locations
+    
+    Returns:
+        (center_dict, zoom_level)
+    """
+    if not locations:
+        return {'lat': 10.762622, 'lng': 106.660172}, 13
+    
+    if len(locations) == 1:
+        # Single location - zoom close to see street details
+        return {
+            'lat': locations[0]['lat'],
+            'lng': locations[0]['lng']
+        }, 16
+    
+    # Multiple locations - fit all in view
+    lats = [loc['lat'] for loc in locations]
+    lngs = [loc['lng'] for loc in locations]
+    
+    # Calculate center point
+    center_lat = (max(lats) + min(lats)) / 2
+    center_lng = (max(lngs) + min(lngs)) / 2
+    
+    # Calculate zoom based on geographic spread
+    lat_diff = max(lats) - min(lats)
+    lng_diff = max(lngs) - min(lngs)
+    max_diff = max(lat_diff, lng_diff)
+    
+    # ✅ Zoom levels based on geographic spread
+    # Smaller spread = higher zoom (closer view)
+    if max_diff < 0.005:
+        zoom = 17  # Very close
+    elif max_diff < 0.01:
+        zoom = 16  # Close
+    elif max_diff < 0.03:
+        zoom = 15  # Medium-close
+    elif max_diff < 0.05:
+        zoom = 14  # Medium
+    elif max_diff < 0.1:
+        zoom = 13  # Medium-far
+    elif max_diff < 0.2:
+        zoom = 12  # Far
+    else:
+        zoom = 11  # Very far
+    
+    return {'lat': center_lat, 'lng': center_lng}, zoom
+
+
 def validate_locations(locations: List[Dict]) -> Dict[str, any]:
     """
     Validate location constraints
@@ -141,7 +191,14 @@ def render_integrated_map(
         st.error("❌ streamlit-folium not installed")
         return st.session_state.clicked_locations
     
-    # ✅ Use preserved map center/zoom to avoid jumping
+    # ✅ NEW: Calculate optimal view if locations exist
+    # This ensures map automatically fits all picked locations
+    if st.session_state.clicked_locations:
+        optimal_center, optimal_zoom = calculate_optimal_view(st.session_state.clicked_locations)
+        st.session_state.map_center = optimal_center
+        st.session_state.map_zoom = optimal_zoom
+    
+    # ✅ Use optimal or preserved map center/zoom to avoid jumping
     m = folium.Map(
         location=[st.session_state.map_center['lat'], st.session_state.map_center['lng']],
         zoom_start=st.session_state.map_zoom,
@@ -149,12 +206,13 @@ def render_integrated_map(
         control_scale=True
     )
     
-    # ✅ ADD PLUGINS
+    # ✅ ADD PLUGINS - Enhanced Geocoder for better search
     Geocoder(
         collapsed=False,
         position='topleft',
         placeholder='🔍 Search address...',
-        add_marker=False
+        add_marker=True,  # ✅ Show marker on search result
+        zoom=16  # ✅ Auto-zoom to search result at street level
     ).add_to(m)
     
     Fullscreen(
@@ -356,9 +414,10 @@ def render_integrated_map(
                 st.session_state.location_counter += 1
                 st.success(f"✅ Added: {address}")
                 
-                # ✅ Update map view for next rerun (preserve current zoom)
+                # ✅ NEW: Auto-zoom to newly picked location
+                # Set center to new location and zoom close to see street details
                 st.session_state.map_center = {'lat': clicked_lat, 'lng': clicked_lng}
-                # Note: Folium map object doesn't expose zoom, so we keep the current zoom
+                st.session_state.map_zoom = 16  # Close zoom for street-level detail
                 
                 # ✅ SINGLE RERUN - no double rerun
                 st.rerun()
