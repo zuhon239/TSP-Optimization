@@ -3,11 +3,8 @@ numpy>=1.24.3
 pandas>=2.0.3
 scipy>=1.11.1
 
-# Evolutionary Algorithm
-deap>=1.4.3
 
-# Google Maps integration  
-googlemaps>=4.10.0
+# Removed: Google Maps API (using OpenRouteService instead)
 requests>=2.31.0
 
 # Web framework

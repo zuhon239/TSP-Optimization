@@ -129,11 +129,11 @@ def import_src_modules():
         MODULES_STATUS['PSOSolver'] = False
         import_logs.append(("⚠️", f"PSOSolver not available: {e}"))
     
-    # Import Google Maps utilities
+    # Import Geospatial utilities (OpenRouteService)
     try:
         from src.geo_utils import GeoUtils
         MODULES_STATUS['GeoUtils'] = True
-        import_logs.append(("✅", "GeoUtils (Google Maps API) loaded"))
+        import_logs.append(("✅", "GeoUtils (OpenRouteService) loaded"))
     except ImportError as e:
         GeoUtils = None
         MODULES_STATUS['GeoUtils'] = False
@@ -179,16 +179,16 @@ def import_component_modules():
     """Import all UI component modules"""
     import_logs = []
     
-    # Import Google Maps UI
+    # Import Map visualization component
     try:
-        from components.google_maps_ui import render_integrated_map, validate_locations
-        MODULES_STATUS['google_maps_ui'] = True
-        import_logs.append(("✅", "Google Maps UI component loaded"))
+        from components.maps_ui import render_integrated_map, validate_locations
+        MODULES_STATUS['results_display'] = True
+        import_logs.append(("✅", "Map visualization component loaded"))
     except ImportError as e:
         render_integrated_map = None
         validate_locations = None
-        MODULES_STATUS['google_maps_ui'] = False
-        import_logs.append(("⚠️", f"Google Maps UI not available: {e}"))
+        MODULES_STATUS['results_display'] = False
+        import_logs.append(("⚠️", f"Map visualization not available: {e}"))
     
     # Import Sidebar UI
     try:
@@ -241,8 +241,8 @@ render_sidebar = component_modules['render_sidebar']
 display_results = component_modules['display_results']
 display_comparison_results = component_modules['display_comparison_results']
 
-# Google Maps API configuration
-GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+# Routing Service configuration
+OPENROUTE_API_KEY = os.getenv('OPENROUTE_API_KEY')
 
 # =============================================================================
 # 4. SESSION STATE INITIALIZATION
@@ -413,16 +413,16 @@ def render_header():
         
         with col2:
             st.write("**🎨 UI Components:**")
-            ui_modules = ['google_maps_ui', 'sidebar', 'results_display']
+            ui_modules = ['sidebar', 'results_display']
             for module in ui_modules:
                 status = MODULES_STATUS.get(module, False)
                 icon = "✅" if status else "❌"
                 st.write(f"{icon} {module}")
         
         with col3:
-            st.write("**🔗 External Services:**")
-            api_status = "✅ Connected" if GOOGLE_MAPS_API_KEY else "❌ Not configured"
-            st.write(f"Google Maps API: {api_status}")
+            st.write("**🔗 Routing Services:**")
+            routing_status = "✅ Connected" if OPENROUTE_API_KEY else "❌ Not configured"
+            st.write(f"OpenRouteService: {routing_status}")
             
             geo_utils_status = "✅ Available" if st.session_state.geo_utils else "❌ Not available"
             st.write(f"GeoUtils: {geo_utils_status}")

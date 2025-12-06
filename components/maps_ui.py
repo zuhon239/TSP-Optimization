@@ -1,5 +1,5 @@
 """
-Google Maps Interactive UI Component - INTEGRATED VERSION
+OpenStreet Maps Interactive UI Component - INTEGRATED VERSION
 Single map for picking AND displaying optimized route
 Author: Quân (Frontend Specialist)
 Enhanced with validation, delete buttons, and constraints
