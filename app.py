@@ -490,7 +490,65 @@ def main():
         st.success("✅ **Route optimized!** The map shows your optimized delivery route.")
     
     # Map controls
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2, col3, col4 = st.columns([1.5, 1, 1, 1])
+    
+    with col1:
+        # Load test case button
+        import os
+        import json
+        test_cases_dir = os.path.join(os.path.dirname(__file__), 'data', 'test_cases')
+        test_case_files = []
+        if os.path.exists(test_cases_dir):
+            test_case_files = [f for f in os.listdir(test_cases_dir) if f.endswith('.json')]
+        
+        if test_case_files:
+            # Initialize session state for selected test case
+            if 'selected_test_case' not in st.session_state:
+                st.session_state.selected_test_case = None
+            
+            # Show available test cases in expander
+            with st.expander("📂 Load Test Case"):
+                for test_file in test_case_files:
+                    if st.button(test_file.replace('.json', ''), key=f"load_{test_file}", use_container_width=True):
+                        try:
+                            test_case_path = os.path.join(test_cases_dir, test_file)
+                            with open(test_case_path, 'r', encoding='utf-8') as f:
+                                test_data = json.load(f)
+                            
+                            # Clear existing data
+                            st.session_state.clicked_locations = []
+                            st.session_state.locations = []
+                            st.session_state.location_counter = 1
+                            
+                            # Load coordinates from test case - ONLY lat, lng, name
+                            for idx, coord in enumerate(test_data.get('coordinates', [])):
+                                location = {
+                                    'name': coord.get('name', f'Location {idx+1}'),
+                                    'lat': float(coord['lat']),
+                                    'lng': float(coord['lng']),
+                                    'address': coord.get('address', f"{coord['lat']:.6f}, {coord['lng']:.6f}"),
+                                    'isStart': idx == 0,  # First location is always depot
+                                    'type': 'depot' if idx == 0 else 'customer'
+                                }
+                                st.session_state.clicked_locations.append(location)
+                                st.session_state.locations.append(location)
+                            
+                            st.session_state.location_counter = len(st.session_state.clicked_locations) + 1
+                            
+                            # Reset optimization state
+                            st.session_state.distance_matrix = None
+                            st.session_state.optimized_route = None
+                            st.session_state.route_coords = None
+                            st.session_state.optimization_results = None
+                            st.session_state.comparison_results = None
+                            st.session_state.active_result_type = None
+                            st.session_state.last_map_center = None
+                            st.session_state.last_map_zoom = None
+                            
+                            st.session_state.selected_test_case = test_file
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to load: {str(e)}")
     
     with col2:
         if st.button("🔄 Reset View", use_container_width=True):
