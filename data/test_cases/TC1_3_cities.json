@@ -1,0 +1,37 @@
+{
+  "name": "TC1_3_cities_hcmc",
+  "description": "TC1 - Small scale: 3-location TSP test case for basic functionality testing",
+  "category": "small_scale",
+  "num_cities": 3,
+  "coordinates": [
+    {
+      "name": "District 1 - Ben Thanh Market",
+      "lat": 10.772114,
+      "lng": 106.698153,
+      "type": "depot",
+      "address": "Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
+    },
+    {
+      "name": "District 3 - Reunification Palace",
+      "lat": 10.777229,
+      "lng": 106.695900,
+      "type": "customer",
+      "address": "135 Nam Kỳ Khởi Nghĩa, Phường Bến Thành, Quận 1, TP.HCM"
+    },
+    {
+      "name": "District 5 - Cho Lon Market",
+      "lat": 10.754049,
+      "lng": 106.666123,
+      "type": "customer",
+      "address": "Hải Thượng Lãn Ông, Phường 10, Quận 5, TP.HCM"
+    }
+  ],
+  "expected_results": {
+    "optimal_distance_km": 12.5,
+    "optimal_route": [0, 1, 2, 0],
+    "route_description": "Ben Thanh Market → Reunification Palace → Cho Lon Market → Ben Thanh Market"
+  },
+  "test_purpose": "Basic functionality validation - Minimum viable TSP instance",
+  "complexity": "low",
+  "notes": "Simplest test case to verify algorithm correctness and UI functionality"
+}

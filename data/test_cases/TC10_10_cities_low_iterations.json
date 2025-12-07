@@ -1,0 +1,137 @@
+{
+  "name": "TC10_10_cities_low_iterations",
+  "description": "TC10 - Low iterations: 10-location TSP to test early stopping and convergence speed",
+  "category": "parameter_sensitivity",
+  "test_type": "low_iteration_count",
+  "num_cities": 10,
+  "coordinates": [
+    {
+      "name": "Chợ Bến Thành",
+      "lat": 10.772622,
+      "lng": 106.698179,
+      "type": "depot",
+      "address": "Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
+    },
+    {
+      "name": "Dinh Độc Lập",
+      "lat": 10.777229,
+      "lng": 106.695900,
+      "type": "customer",
+      "address": "135 Nam Kỳ Khởi Nghĩa, Quận 1, TP.HCM"
+    },
+    {
+      "name": "Nhà Thờ Đức Bà",
+      "lat": 10.779738,
+      "lng": 106.699092,
+      "type": "customer",
+      "address": "01 Công xã Paris, Quận 1, TP.HCM"
+    },
+    {
+      "name": "Bưu Điện Trung Tâm",
+      "lat": 10.780043,
+      "lng": 106.700234,
+      "type": "customer",
+      "address": "02 Công xã Paris, Quận 1, TP.HCM"
+    },
+    {
+      "name": "Chợ Lớn",
+      "lat": 10.754049,
+      "lng": 106.666123,
+      "type": "customer",
+      "address": "Hải Thượng Lãn Ông, Quận 5, TP.HCM"
+    },
+    {
+      "name": "Chợ Bình Tây",
+      "lat": 10.751513,
+      "lng": 106.652145,
+      "type": "customer",
+      "address": "57A Thập Tự, Quận 6, TP.HCM"
+    },
+    {
+      "name": "Landmark 81",
+      "lat": 10.794533,
+      "lng": 106.721800,
+      "type": "customer",
+      "address": "720A Điện Biên Phủ, Bình Thạnh, TP.HCM"
+    },
+    {
+      "name": "Crescent Mall",
+      "lat": 10.729999,
+      "lng": 106.702774,
+      "type": "customer",
+      "address": "101 Tôn Dật Tiên, Quận 7, TP.HCM"
+    },
+    {
+      "name": "Gigamall",
+      "lat": 10.852173,
+      "lng": 106.763473,
+      "type": "customer",
+      "address": "240-242 Phạm Văn Đồng, Thủ Đức, TP.HCM"
+    },
+    {
+      "name": "Đầm Sen",
+      "lat": 10.768283,
+      "lng": 106.635552,
+      "type": "customer",
+      "address": "03 Hòa Bình, Quận 11, TP.HCM"
+    }
+  ],
+  "parameter_configuration": {
+    "test_focus": "Low Iteration/Generation Count Impact",
+    "ga_config": {
+      "population_size": 50,
+      "generations": 25,
+      "crossover_probability": 0.8,
+      "mutation_probability": 0.05,
+      "tournament_size": 3,
+      "elite_size": 2,
+      "notes": "Generations 4x lower than default (25 vs 100)"
+    },
+    "baseline_ga_config": {
+      "generations": 100,
+      "notes": "Standard generation count for comparison"
+    },
+    "pso_config": {
+      "swarm_size": 30,
+      "max_iterations": 25,
+      "w": 0.729,
+      "c1": 1.494,
+      "c2": 1.494,
+      "notes": "Iterations 4x lower than default (25 vs 100)"
+    }
+  },
+  "expected_results": {
+    "optimal_distance_km": 78.5,
+    "optimal_route": [0, 1, 2, 3, 6, 8, 7, 4, 5, 9, 0]
+  },
+  "test_purpose": "Evaluate early stopping performance - Time-constrained optimization scenarios",
+  "complexity": "medium",
+  "expected_behavior": {
+    "low_iteration_effects": [
+      "Faster runtime - 4x speedup",
+      "Lower solution quality - May not converge",
+      "Good for quick approximations",
+      "Tests algorithm's early convergence capability"
+    ],
+    "comparison_metrics": [
+      "Solution quality gap vs optimal",
+      "Runtime reduction vs baseline",
+      "Quality per second (efficiency)",
+      "Convergence rate (improvement per generation)",
+      "Early stopping viability"
+    ],
+    "use_cases": [
+      "Real-time routing with time constraints",
+      "Quick initial solution generation",
+      "Interactive applications requiring fast response",
+      "Multi-stage optimization (fast initial + refinement)"
+    ]
+  },
+  "validation_criteria": {
+    "acceptable_solution_range_km": [78.5, 95.0],
+    "max_runtime_seconds": 5,
+    "min_quality_threshold": 0.85,
+    "quality_degradation_limit": "Within 20% of optimal"
+  },
+  "notes": "Tests time-constrained scenarios - Evaluates algorithm suitability for real-time applications"
+}

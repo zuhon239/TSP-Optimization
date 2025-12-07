@@ -101,7 +101,7 @@ def import_src_modules():
     
     # Import TSP Solver base class
     try:
-        from tsp_solver import TSPSolver
+        from src.tsp_solver import TSPSolver
         MODULES_STATUS['TSPSolver'] = True
         import_logs.append(("✅", "TSPSolver (base class) loaded"))
     except ImportError as e:
@@ -111,7 +111,7 @@ def import_src_modules():
     
     # Import Genetic Algorithm
     try:
-        from ga_solver import GASolver
+        from src.ga_solver import GASolver
         MODULES_STATUS['GASolver'] = True
         import_logs.append(("✅", "GASolver (Genetic Algorithm) loaded"))
     except ImportError as e:
@@ -121,7 +121,7 @@ def import_src_modules():
     
     # Import Particle Swarm Optimization
     try:
-        from pso_solver import PSOSolver
+        from src.pso_solver import PSOSolver
         MODULES_STATUS['PSOSolver'] = True
         import_logs.append(("✅", "PSOSolver (Particle Swarm Optimization) loaded"))
     except ImportError as e:
@@ -129,11 +129,11 @@ def import_src_modules():
         MODULES_STATUS['PSOSolver'] = False
         import_logs.append(("⚠️", f"PSOSolver not available: {e}"))
     
-    # Import Google Maps utilities
+    # Import Geospatial utilities (OpenRouteService)
     try:
-        from geo_utils import GeoUtils
+        from src.geo_utils import GeoUtils
         MODULES_STATUS['GeoUtils'] = True
-        import_logs.append(("✅", "GeoUtils (Google Maps API) loaded"))
+        import_logs.append(("✅", "GeoUtils (OpenRouteService) loaded"))
     except ImportError as e:
         GeoUtils = None
         MODULES_STATUS['GeoUtils'] = False
@@ -141,7 +141,7 @@ def import_src_modules():
     
     # Import Algorithm Comparison
     try:
-        from comparison import AlgorithmComparison
+        from src.comparison import AlgorithmComparison
         MODULES_STATUS['AlgorithmComparison'] = True
         import_logs.append(("✅", "AlgorithmComparison loaded"))
     except ImportError as e:
@@ -151,7 +151,7 @@ def import_src_modules():
     
     # Import Visualizer
     try:
-        from visualizer import TSPVisualizer
+        from src.visualizer import TSPVisualizer
         MODULES_STATUS['Visualizer'] = True
         import_logs.append(("✅", "TSPVisualizer loaded"))
     except ImportError as e:
@@ -179,16 +179,16 @@ def import_component_modules():
     """Import all UI component modules"""
     import_logs = []
     
-    # Import Google Maps UI
+    # Import Map visualization component
     try:
-        from components.google_maps_ui import render_integrated_map, validate_locations
-        MODULES_STATUS['google_maps_ui'] = True
-        import_logs.append(("✅", "Google Maps UI component loaded"))
+        from components.maps_ui import render_integrated_map, validate_locations
+        MODULES_STATUS['results_display'] = True
+        import_logs.append(("✅", "Map visualization component loaded"))
     except ImportError as e:
         render_integrated_map = None
         validate_locations = None
-        MODULES_STATUS['google_maps_ui'] = False
-        import_logs.append(("⚠️", f"Google Maps UI not available: {e}"))
+        MODULES_STATUS['results_display'] = False
+        import_logs.append(("⚠️", f"Map visualization not available: {e}"))
     
     # Import Sidebar UI
     try:
@@ -241,8 +241,8 @@ render_sidebar = component_modules['render_sidebar']
 display_results = component_modules['display_results']
 display_comparison_results = component_modules['display_comparison_results']
 
-# Google Maps API configuration
-GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+# Routing Service configuration
+OPENROUTE_API_KEY = os.getenv('OPENROUTE_API_KEY')
 
 # =============================================================================
 # 4. SESSION STATE INITIALIZATION
@@ -285,6 +285,13 @@ if 'last_map_center' not in st.session_state:
 
 if 'last_map_zoom' not in st.session_state:
     st.session_state.last_map_zoom = None
+
+# ✅ Track which result type is currently displayed
+if 'active_result_type' not in st.session_state:
+    st.session_state.active_result_type = None  # 'ga', 'pso', 'comparison', or None
+
+if 'last_algorithm_mode' not in st.session_state:
+    st.session_state.last_algorithm_mode = None  # Track mode for change detection
 
 # =============================================================================
 # 5. HELPER FUNCTIONS
@@ -413,16 +420,16 @@ def render_header():
         
         with col2:
             st.write("**🎨 UI Components:**")
-            ui_modules = ['google_maps_ui', 'sidebar', 'results_display']
+            ui_modules = ['sidebar', 'results_display']
             for module in ui_modules:
                 status = MODULES_STATUS.get(module, False)
                 icon = "✅" if status else "❌"
                 st.write(f"{icon} {module}")
         
         with col3:
-            st.write("**🔗 External Services:**")
-            api_status = "✅ Connected" if GOOGLE_MAPS_API_KEY else "❌ Not configured"
-            st.write(f"Google Maps API: {api_status}")
+            st.write("**🔗 Routing Services:**")
+            routing_status = "✅ Connected" if OPENROUTE_API_KEY else "❌ Not configured"
+            st.write(f"OpenRouteService: {routing_status}")
             
             geo_utils_status = "✅ Available" if st.session_state.geo_utils else "❌ Not available"
             st.write(f"GeoUtils: {geo_utils_status}")
@@ -483,7 +490,65 @@ def main():
         st.success("✅ **Route optimized!** The map shows your optimized delivery route.")
     
     # Map controls
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2, col3, col4 = st.columns([1.5, 1, 1, 1])
+    
+    with col1:
+        # Load test case button
+        import os
+        import json
+        test_cases_dir = os.path.join(os.path.dirname(__file__), 'data', 'test_cases')
+        test_case_files = []
+        if os.path.exists(test_cases_dir):
+            test_case_files = [f for f in os.listdir(test_cases_dir) if f.endswith('.json')]
+        
+        if test_case_files:
+            # Initialize session state for selected test case
+            if 'selected_test_case' not in st.session_state:
+                st.session_state.selected_test_case = None
+            
+            # Show available test cases in expander
+            with st.expander("📂 Load Test Case"):
+                for test_file in test_case_files:
+                    if st.button(test_file.replace('.json', ''), key=f"load_{test_file}", use_container_width=True):
+                        try:
+                            test_case_path = os.path.join(test_cases_dir, test_file)
+                            with open(test_case_path, 'r', encoding='utf-8') as f:
+                                test_data = json.load(f)
+                            
+                            # Clear existing data
+                            st.session_state.clicked_locations = []
+                            st.session_state.locations = []
+                            st.session_state.location_counter = 1
+                            
+                            # Load coordinates from test case - ONLY lat, lng, name
+                            for idx, coord in enumerate(test_data.get('coordinates', [])):
+                                location = {
+                                    'name': coord.get('name', f'Location {idx+1}'),
+                                    'lat': float(coord['lat']),
+                                    'lng': float(coord['lng']),
+                                    'address': coord.get('address', f"{coord['lat']:.6f}, {coord['lng']:.6f}"),
+                                    'isStart': idx == 0,  # First location is always depot
+                                    'type': 'depot' if idx == 0 else 'customer'
+                                }
+                                st.session_state.clicked_locations.append(location)
+                                st.session_state.locations.append(location)
+                            
+                            st.session_state.location_counter = len(st.session_state.clicked_locations) + 1
+                            
+                            # Reset optimization state
+                            st.session_state.distance_matrix = None
+                            st.session_state.optimized_route = None
+                            st.session_state.route_coords = None
+                            st.session_state.optimization_results = None
+                            st.session_state.comparison_results = None
+                            st.session_state.active_result_type = None
+                            st.session_state.last_map_center = None
+                            st.session_state.last_map_zoom = None
+                            
+                            st.session_state.selected_test_case = test_file
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Failed to load: {str(e)}")
     
     with col2:
         if st.button("🔄 Reset View", use_container_width=True):
@@ -670,6 +735,13 @@ def main():
             if st.button("🔄 Calculate Distances", type="primary", use_container_width=True,
                         disabled=not validation['valid']):
                 try:
+                    # ✅ CLEAR ALL RESULTS when recalculating distances
+                    st.session_state.optimization_results = None
+                    st.session_state.comparison_results = None
+                    st.session_state.active_result_type = None
+                    st.session_state.optimized_route = None
+                    st.session_state.route_coords = None
+                    
                     with st.spinner("🛣️ Calculating road distances..."):
                         # ✅ FIND DEPOT INDEX
                         depot_idx = next((i for i, loc in enumerate(st.session_state.clicked_locations) 
@@ -754,6 +826,32 @@ def main():
                 horizontal=True,
                 help="GA = Evolution-based | PSO = Swarm-based | Compare = Run both algorithms"
             )
+            
+            # ✅ DETECT MODE CHANGE AND CLEAR MISMATCHED RESULTS
+            if st.session_state.last_algorithm_mode != algorithm_mode:
+                # Algorithm mode changed - clear old results
+                if algorithm_mode == "🧬 Genetic Algorithm (GA)":
+                    # Switching to GA - clear PSO and comparison results
+                    if st.session_state.active_result_type in ['pso', 'comparison']:
+                        st.session_state.optimization_results = None
+                        st.session_state.comparison_results = None
+                        st.session_state.active_result_type = None
+                
+                elif algorithm_mode == "🐝 Particle Swarm Optimization (PSO)":
+                    # Switching to PSO - clear GA and comparison results
+                    if st.session_state.active_result_type in ['ga', 'comparison']:
+                        st.session_state.optimization_results = None
+                        st.session_state.comparison_results = None
+                        st.session_state.active_result_type = None
+                
+                else:  # "🔬 Compare Both"
+                    # Switching to Compare - clear single algorithm results
+                    if st.session_state.active_result_type in ['ga', 'pso']:
+                        st.session_state.optimization_results = None
+                        st.session_state.active_result_type = None
+                
+                # Update last mode
+                st.session_state.last_algorithm_mode = algorithm_mode
             
             st.write("")
             
@@ -968,6 +1066,8 @@ def main():
                                     'pso_params': pso_params,
                                     'comparison': comparison_data
                                 }
+                                # ✅ MARK THIS AS COMPARISON RESULT
+                                st.session_state.active_result_type = 'comparison'
                                 
                                 progress_bar.progress(1.0)
                                 status_text.text("✅ Comparison completed!")
@@ -988,19 +1088,24 @@ def main():
                                 status_text.text("🧬 Evolving population...")
                                 progress_bar.progress(0.4)
                                 results = run_genetic_algorithm(st.session_state.distance_matrix, config_params)
+                            # ✅ WILL MARK AS GA RESULT BELOW
                         else:
                             algorithm_name = "Particle Swarm Optimization"
                             with st.spinner(f"🐝 Running {algorithm_name}..."):
                                 status_text.text("🐝 Optimizing swarm...")
                                 progress_bar.progress(0.4)
                                 results = run_pso_algorithm(st.session_state.distance_matrix, config_params)
-                        
-                        status_text.text("📊 Processing results...")
+                            # ✅ WILL MARK AS PSO RESULT BELOW                        status_text.text("📊 Processing results...")
                         progress_bar.progress(0.7)
                         
                         if results and results.get('success'):
                             st.session_state.optimized_route = results['best_route']
                             st.session_state.optimization_results = results
+                            # ✅ MARK THIS AS GA RESULT
+                            if "GA" in algorithm_mode:
+                                st.session_state.active_result_type = 'ga'
+                            else:
+                                st.session_state.active_result_type = 'pso'
                             
                             # Get real road coordinates
                             status_text.text("🗺️ Generating route path...")
@@ -1027,19 +1132,7 @@ def main():
                             status_text.text("✅ Optimization completed!")
                             
                             st.success("✅ Optimization completed successfully!")
-                            
-                            # Quick results preview
-                            col1, col2, col3, col4 = st.columns(4)
-                            with col1:
-                                st.metric("🏆 Best Distance", f"{results.get('best_distance', 0):.2f} km")
-                            with col2:
-                                st.metric("⏱️ Runtime", f"{results.get('runtime_seconds', 0):.2f}s")
-                            with col3:
-                                st.metric("🔄 Iterations", f"{results.get('num_iterations', 0):,}")
-                            with col4:
-                                improvement = ((results.get('initial_distance', 0) - results.get('best_distance', 0)) / results.get('initial_distance', 1)) * 100
-                                st.metric("📈 Improvement", f"{improvement:.1f}%")
-                            
+                                                   
                             st.balloons()
                             
                             time.sleep(1)
@@ -1065,9 +1158,10 @@ def main():
                         st.write("- Distance matrix has issues")
                         st.write("- Insufficient locations for optimization")    
     # =========================================================================
-    # SECTION 5: RESULTS DISPLAY
+    # SECTION 5: RESULTS DISPLAY (SINGLE ALGORITHM - GA or PSO)
     # =========================================================================
-    if st.session_state.optimization_results and display_results:
+    # ✅ Only display single algorithm results if active_result_type is 'ga' or 'pso'
+    if st.session_state.optimization_results and display_results and st.session_state.active_result_type in ['ga', 'pso']:
         st.write("---")
         st.subheader("📊 Optimization Results")
         
@@ -1096,7 +1190,8 @@ def main():
     # =========================================================================
     # SECTION 6: ALGORITHM COMPARISON RESULTS
     # =========================================================================
-    if st.session_state.comparison_results:
+    # ✅ Only display comparison results if active_result_type is 'comparison'
+    if st.session_state.comparison_results and st.session_state.active_result_type == 'comparison':
         st.write("---")
         st.subheader("🔬 Algorithm Comparison Results")
         

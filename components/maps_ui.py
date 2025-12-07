@@ -1,5 +1,5 @@
 """
-Google Maps Interactive UI Component - INTEGRATED VERSION
+OpenStreet Maps Interactive UI Component - INTEGRATED VERSION
 Single map for picking AND displaying optimized route
 Author: Quân (Frontend Specialist)
 Enhanced with validation, delete buttons, and constraints
@@ -54,6 +54,56 @@ def get_address_from_coordinates(lat: float, lng: float) -> str:
         return f"{lat:.6f}, {lng:.6f}"
 
 
+def calculate_optimal_view(locations: List[Dict]) -> tuple:
+    """
+    ✅ Calculate optimal map center and zoom to show all locations
+    
+    Returns:
+        (center_dict, zoom_level)
+    """
+    if not locations:
+        return {'lat': 10.762622, 'lng': 106.660172}, 13
+    
+    if len(locations) == 1:
+        # Single location - zoom close to see street details
+        return {
+            'lat': locations[0]['lat'],
+            'lng': locations[0]['lng']
+        }, 16
+    
+    # Multiple locations - fit all in view
+    lats = [loc['lat'] for loc in locations]
+    lngs = [loc['lng'] for loc in locations]
+    
+    # Calculate center point
+    center_lat = (max(lats) + min(lats)) / 2
+    center_lng = (max(lngs) + min(lngs)) / 2
+    
+    # Calculate zoom based on geographic spread
+    lat_diff = max(lats) - min(lats)
+    lng_diff = max(lngs) - min(lngs)
+    max_diff = max(lat_diff, lng_diff)
+    
+    # ✅ Zoom levels based on geographic spread
+    # Smaller spread = higher zoom (closer view)
+    if max_diff < 0.005:
+        zoom = 17  # Very close
+    elif max_diff < 0.01:
+        zoom = 16  # Close
+    elif max_diff < 0.03:
+        zoom = 15  # Medium-close
+    elif max_diff < 0.05:
+        zoom = 14  # Medium
+    elif max_diff < 0.1:
+        zoom = 13  # Medium-far
+    elif max_diff < 0.2:
+        zoom = 12  # Far
+    else:
+        zoom = 11  # Very far
+    
+    return {'lat': center_lat, 'lng': center_lng}, zoom
+
+
 def validate_locations(locations: List[Dict]) -> Dict[str, any]:
     """
     Validate location constraints
@@ -105,6 +155,11 @@ def render_integrated_map(
 ) -> List[Dict]:
     """
     Integrated map: picking + route visualization on SAME map
+    
+    ✅ OPTIMIZATION: Prevents flashing/reloading on every click
+    - Deduplicates click events to avoid double processing
+    - Only reruns when a NEW location is actually added
+    - Preserves map position/zoom between interactions
     """
     if center is None:
         center = {'lat': 10.762622, 'lng': 106.660172}
@@ -112,7 +167,7 @@ def render_integrated_map(
     if initial_locations is None:
         initial_locations = []
     
-    # ✅ Initialize session_state
+    # ✅ Initialize session_state for location management
     if 'clicked_locations' not in st.session_state:
         st.session_state.clicked_locations = []
     
@@ -122,24 +177,42 @@ def render_integrated_map(
     if 'location_to_delete' not in st.session_state:
         st.session_state.location_to_delete = None
     
+    # ✅ NEW: Track last processed click to prevent duplicates
+    if 'last_processed_click' not in st.session_state:
+        st.session_state.last_processed_click = None
+    
+    # ✅ NEW: Preserve map view across reruns
+    if 'map_center' not in st.session_state:
+        st.session_state.map_center = center
+    if 'map_zoom' not in st.session_state:
+        st.session_state.map_zoom = zoom
+    
     if not HAS_FOLIUM:
         st.error("❌ streamlit-folium not installed")
         return st.session_state.clicked_locations
     
-    # ✅ Create Folium map
+    # ✅ NEW: Calculate optimal view if locations exist
+    # This ensures map automatically fits all picked locations
+    if st.session_state.clicked_locations:
+        optimal_center, optimal_zoom = calculate_optimal_view(st.session_state.clicked_locations)
+        st.session_state.map_center = optimal_center
+        st.session_state.map_zoom = optimal_zoom
+    
+    # ✅ Use optimal or preserved map center/zoom to avoid jumping
     m = folium.Map(
-        location=[center['lat'], center['lng']],
-        zoom_start=zoom,
+        location=[st.session_state.map_center['lat'], st.session_state.map_center['lng']],
+        zoom_start=st.session_state.map_zoom,
         tiles='OpenStreetMap',
         control_scale=True
     )
     
-    # ✅ ADD PLUGINS
+    # ✅ ADD PLUGINS - Enhanced Geocoder for better search
     Geocoder(
         collapsed=False,
         position='topleft',
         placeholder='🔍 Search address...',
-        add_marker=False
+        add_marker=True,  # ✅ Show marker on search result
+        zoom=16  # ✅ Auto-zoom to search result at street level
     ).add_to(m)
     
     Fullscreen(
@@ -291,42 +364,62 @@ def render_integrated_map(
     # Click handler
     m.add_child(folium.LatLngPopup())
     
-    # ✅ Render map
+    # ✅ Render map with unique key to prevent unnecessary reruns
+    # Using len(clicked_locations) as part of key to detect actual changes
+    map_key = f"integrated_map_{len(st.session_state.clicked_locations)}"
+    
     map_data = st_folium(
         m,
         width=None,
         height=height,
         returned_objects=['last_clicked'],
-        key="integrated_map"
+        key=map_key
     )
     
-    # ✅ Capture clicks (only in pick mode)
+    # ✅ OPTIMIZED: Capture clicks (only in pick mode) with deduplication
     if not optimized_route and map_data and map_data.get('last_clicked'):
         clicked_lat = map_data['last_clicked']['lat']
         clicked_lng = map_data['last_clicked']['lng']
         
-        # Check duplicate
-        is_new = True
-        for loc in st.session_state.clicked_locations:
-            if abs(loc['lat'] - clicked_lat) < 0.00001 and abs(loc['lng'] - clicked_lng) < 0.00001:
-                is_new = False
-                break
+        # ✅ Create unique identifier for this click
+        click_id = f"{clicked_lat:.6f}_{clicked_lng:.6f}"
         
-        if is_new:
-            with st.spinner("🔍 Getting address..."):
-                address = get_address_from_coordinates(clicked_lat, clicked_lng)
+        # ✅ CHECK: Is this a NEW click (not a duplicate)?
+        if st.session_state.last_processed_click != click_id:
+            # Mark this click as processed BEFORE checking for duplicates in locations
+            st.session_state.last_processed_click = click_id
             
-            new_location = {
-                'name': f'Location {st.session_state.location_counter}',
-                'lat': clicked_lat,
-                'lng': clicked_lng,
-                'address': address,
-                'isStart': False,
-                'type': 'customer'
-            }
-            st.session_state.clicked_locations.append(new_location)
-            st.session_state.location_counter += 1
-            st.success(f"✅ Added: {address}")
-            st.rerun()
+            # Check if this location already exists in our list
+            is_new_location = True
+            for loc in st.session_state.clicked_locations:
+                if abs(loc['lat'] - clicked_lat) < 0.00001 and abs(loc['lng'] - clicked_lng) < 0.00001:
+                    is_new_location = False
+                    st.warning(f"⚠️ Location already exists at {loc['name']}")
+                    break
+            
+            # ✅ Only add and rerun if this is a genuinely new location
+            if is_new_location:
+                with st.spinner("🔍 Getting address..."):
+                    address = get_address_from_coordinates(clicked_lat, clicked_lng)
+                
+                new_location = {
+                    'name': f'Location {st.session_state.location_counter}',
+                    'lat': clicked_lat,
+                    'lng': clicked_lng,
+                    'address': address,
+                    'isStart': False,
+                    'type': 'customer'
+                }
+                st.session_state.clicked_locations.append(new_location)
+                st.session_state.location_counter += 1
+                st.success(f"✅ Added: {address}")
+                
+                # ✅ NEW: Auto-zoom to newly picked location
+                # Set center to new location and zoom close to see street details
+                st.session_state.map_center = {'lat': clicked_lat, 'lng': clicked_lng}
+                st.session_state.map_zoom = 16  # Close zoom for street-level detail
+                
+                # ✅ SINGLE RERUN - no double rerun
+                st.rerun()
     
     return st.session_state.clicked_locations

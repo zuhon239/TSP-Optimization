@@ -262,6 +262,7 @@ class TSPSolver:
                 'algorithm': self.__class__.__name__,
                 'best_route': display_route,
                 'best_distance': best_distance,
+                'initial_distance': self.initial_distance,
                 'runtime_seconds': self.get_runtime(),
                 'num_cities': self.num_cities,
                 'num_iterations': len(self.iteration_history),
