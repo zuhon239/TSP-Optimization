@@ -1,0 +1,56 @@
+{
+  "name": "TC2_5_cities_hcmc",
+  "description": "TC2 - Small scale baseline: 5-location TSP test case for performance baseline",
+  "category": "small_scale",
+  "num_cities": 5,
+  "coordinates": [
+    {
+      "name": "District 1 - Ben Thanh Market",
+      "lat": 10.772114,
+      "lng": 106.698153,
+      "type": "depot",
+      "address": "Lê Lợi, Phường Bến Thành, Quận 1, TP.HCM"
+    },
+    {
+      "name": "District 3 - Reunification Palace",
+      "lat": 10.777229,
+      "lng": 106.695900,
+      "type": "customer",
+      "address": "135 Nam Kỳ Khởi Nghĩa, Phường Bến Thành, Quận 1, TP.HCM"
+    },
+    {
+      "name": "District 5 - Cho Lon Market",
+      "lat": 10.754049,
+      "lng": 106.666123,
+      "type": "customer",
+      "address": "Hải Thượng Lãn Ông, Phường 10, Quận 5, TP.HCM"
+    },
+    {
+      "name": "District 7 - Crescent Mall",
+      "lat": 10.729999,
+      "lng": 106.702774,
+      "type": "customer",
+      "address": "101-103 Tôn Dật Tiên, Tân Phú, Quận 7, TP.HCM"
+    },
+    {
+      "name": "Binh Thanh - Landmark 81",
+      "lat": 10.794533,
+      "lng": 106.721800,
+      "type": "customer",
+      "address": "720A Đ. Điện Biên Phủ, Vinhomes Tân Cảng, Bình Thạnh, TP.HCM"
+    }
+  ],
+  "expected_results": {
+    "optimal_distance_km": 45.2,
+    "optimal_route": [0, 1, 4, 3, 2, 0],
+    "route_description": "Ben Thanh → Reunification Palace → Landmark 81 → Crescent Mall → Cho Lon → Ben Thanh"
+  },
+  "test_purpose": "Performance baseline - Standard reference for algorithm comparison",
+  "complexity": "low-medium",
+  "performance_metrics": {
+    "expected_ga_time_seconds": 5,
+    "expected_pso_time_seconds": 4,
+    "search_space_size": "4! = 24 possible routes"
+  },
+  "notes": "Baseline test case covering major HCMC districts - Used as reference for performance comparison"
+}
